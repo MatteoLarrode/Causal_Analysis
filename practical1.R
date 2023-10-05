@@ -28,3 +28,16 @@ fishdata |>
 # vi) Create a new dataset consisting only of countries that are both Muslim and a member of OPEC
 muslim_OPEC <- fishdata |> 
   filter(MUSLIM == 1 & OPEC == 1)
+
+# b) ----
+# What is the difference in mean Freedom House score between Muslim and Non-Muslim countries? 
+# Calculate it both by hand and using a regression, verifying that your answers are identical.
+
+# by hand
+mean(fishdata[fishdata$MUSLIM == 0,]$FHREVERS) - mean(fishdata[fishdata$MUSLIM == 1,]$FHREVERS)
+# by regression
+summary(lm(FHREVERS ~ MUSLIM == 0, fishdata))
+
+# differences in mean score are equal because dependent variable is binary
+
+
