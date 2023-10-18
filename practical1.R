@@ -1,11 +1,9 @@
 # Week 1: Statistical Preliminaries ---------
 library(tidyverse)
 
-
-# a) ----
-
 fishdata <- read_csv("data/fishdata.csv")
 
+# a) ----
 # i) How many countries are predominantly Muslim?
 nrow(fishdata[fishdata$MUSLIM == 1, ])
 
@@ -40,4 +38,38 @@ summary(lm(FHREVERS ~ MUSLIM == 0, fishdata))
 
 # differences in mean score are equal because dependent variable is binary
 
+# c) ----
+# Differences in means in b) is likely to be biased by omitted variable bias.
+# Being to a previous colony, and gdp are examples of such omitted variables
 
+# d) ----
+# Conduct a t-test for the difference in means in (b) using R’s t.test() function. 
+# Is the difference statistically significant?
+t.test(fishdata[fishdata$MUSLIM == 1,]$FHREVERS, fishdata[fishdata$MUSLIM == 0,]$FHREVERS)
+# The difference is statistically significant at any significance level,
+# because the t-statistic is -9.63 and the p-value is extremely close to zero
+
+# e) ----
+# Conduct the t-test again, this time coding it by hand. 
+# Confirm that your answer is identical to (d)
+d <- mean(fishdata[fishdata$MUSLIM == 1,]$FHREVERS) - mean(fishdata[fishdata$MUSLIM == 0,]$FHREVERS)
+
+se <- sqrt(
+  var(fishdata[fishdata$MUSLIM == 1,]$FHREVERS) / length(fishdata[fishdata$MUSLIM == 1,]$FHREVERS) +
+  var(fishdata[fishdata$MUSLIM == 0,]$FHREVERS) / length(fishdata[fishdata$MUSLIM == 0,]$FHREVERS)
+)
+
+d/se
+
+#f) ----
+# i) The percentage of Muslim countries that are former British colonies
+length(fishdata$MUSLIM[fishdata$BRITCOL==1 & fishdata$MUSLIM==1]) / sum(fishdata$MUSLIM)
+
+# ii) The percentage of non-Muslim countries that are former British colonies
+
+
+# iii) The correlation between being a former British colony and Freedom House 
+# score, controlling for being Muslim
+
+
+# Use these results to explain the impact that controlling for BRITCOL has on the estimated effect of MUSLIM
