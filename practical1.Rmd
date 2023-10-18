@@ -126,3 +126,38 @@ However, the correlation between being a former British colony and the Freedom H
 
 As a result, the coefficient on MUSLIM is virtually unchanged compared to the difference in means we estimated in (d) and (e). Being a British colony is not an omitted variable here.
 
+
+g) Repeat (f) for OPEC, GRW7598P and GDP90LGN. For the latter two variables, simply calculate the correlation between each one and MUSLIM instead of percentages for steps (i) and (ii)
+
+```{r}
+length(fishdata$MUSLIM[fishdata$OPEC==1 & fishdata$MUSLIM==1]) / sum(fishdata$MUSLIM)
+length(fishdata$MUSLIM[fishdata$OPEC==1 & fishdata$MUSLIM==0]) / (length(fishdata$MUSLIM)-sum(fishdata$MUSLIM))
+summary(lm(FHREVERS ~ MUSLIM + OPEC, data=fishdata))
+```
+There is a positive correlation between being a Muslim country and being an OPEC member, and a negative correlation (although statistically insignificant) between being an OPEC member and democracy, controlling for being Muslim.
+
+```{r}
+cor(fishdata$GRW7598P,fishdata$MUSLIM)
+summary(lm(FHREVERS ~ MUSLIM + GRW7598P, data=fishdata))
+```
+```{r}
+cor(fishdata$GDP90LGN,fishdata$MUSLIM)
+summary(lm(FHREVERS ~ MUSLIM + GDP90LGN, data=fishdata))
+```
+On the other hand, there is 
+- a negative correlation between GDP growth/level in 1990 and being Muslim, 
+- and a positive correlation between GDP growth/level in 1990 and democracy.
+
+This means that omitting any of these variables will lead to downward bias in the estimated effect of MUSLIM, as explained in (c).
+
+Including them should lead to the difference becoming more positive (i.e., closer to 0).
+
+### h) Final regression
+
+Now estimate a regression of FHREVRERS on MUSLIM, BRITCOL, OPEC and GRW7598P. Again, do the results make sense?
+
+```{r}
+ summary(lm(FHREVERS ~ MUSLIM + BRITCOL + OPEC + GRW7598P + GDP90LGN , data=fishdata))
+
+```
+As expected, the coefficient on MUSLIM is now substantially closer to zero. Due to omitted variable bias, our initial difference-in-means estimate greatly exaggerated any negative impact that being Muslim has on a country’s level of democracy. It is very possible that the effect would get closer and closer to zero if we added in even more omitted variables.
