@@ -1,0 +1,16 @@
+---
+title: "Practical 2"
+author: "Matteo Larrode"
+date: "2023-10-18"
+output: html_document
+---
+
+# Week 2: Causation and Randomised Experiments
+
+### Question 1: A demonstration of the logic behind randomised experiments
+
+```{r cars}
+summary(cars)
+```
+
+### Question 2
