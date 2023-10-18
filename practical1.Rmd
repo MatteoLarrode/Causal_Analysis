@@ -101,5 +101,28 @@ d/se
 
 ### f) Calculate: 
 
+i) The percentage of Muslim countries that are former British colonies
+```{r}
+length(fishdata$MUSLIM[fishdata$BRITCOL==1 & fishdata$MUSLIM==1]) / sum(fishdata$MUSLIM)
+```
+_TIP_: here we use the sum() function to get the number of Muslim countries because the MUSLIM variable has been coded such that is the country is predominently Muslim, it gets a value of 1; therefore, non-predominently countries, with a value of 0 will not be counted in the sum().
 
+ii) The percentage of non-Muslim countries that are former British colonies
+
+Note that steps i) and ii) are akin to measuring the correlation between being a Muslim country and being a former British colony. We do it this way because a correlation coefficient is defined only for two continous variables, and these are both binary.
+```{r}
+length(fishdata$MUSLIM[fishdata$BRITCOL==1 & fishdata$MUSLIM==0]) / (length(fishdata$MUSLIM)-sum(fishdata$MUSLIM))
+```
+
+iii) The correlation between being a former British colony and Freedom House score, controlling for being Muslim.
+```{r}
+summary(lm(FHREVERS ~ MUSLIM + BRITCOL, data=fishdata))
+```
+- 15.9% of Muslim countries are former British colonies;
+- 23.1% of non-Muslim countries are former British colonies
+-> Being a Muslim country and being a former British colony are negatively correlated. 
+
+However, the correlation between being a former British colony and the Freedom House score, controlling for being Muslim, is virtually zero. The coefficient on BRITCOL is very small (bearing in mind that the freedom house score ranges from 1 to 7) and not statistically significant.
+
+As a result, the coefficient on MUSLIM is virtually unchanged compared to the difference in means we estimated in (d) and (e). Being a British colony is not an omitted variable here.
 
