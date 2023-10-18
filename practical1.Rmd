@@ -15,10 +15,91 @@ fishdata <- read_csv("data/fishdata.csv")
 
 ### a) Taking subsets and summarising variables
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+i) How many countries are predominantly Muslim?
+```{r}
+nrow(fishdata[fishdata$MUSLIM == 1, ])
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+ii) What percentage of countries are predominantly Muslim?
+```{r}
+nrow(fishdata[fishdata$MUSLIM == 1, ]) / nrow(fishdata) * 100
+```
+
+iii) How many countries have GDP in 1990 of above 3.0?
+```{r}
+nrow(fishdata[fishdata$GDP90LGN > 3,])
+```
+
+iv) How many countries are both Muslim and a former British colony?
+```{r}
+fishdata |> 
+  filter(MUSLIM == 1 & BRITCOL == 1) |> 
+  nrow()
+```
+
+v) How many countries have either average economic growth from 1975-98 of above 0.6% or GDP in 1990 of above 2.5?
+```{r}
+fishdata |> 
+  filter(GRW7598P > .6 | GDP90LGN > 2.5) |> 
+  nrow()
+```
+
+vi) Create a new dataset consisting only of countries that are both Muslim and a member of OPEC
+```{r}
+muslim_OPEC <- fishdata |> 
+  filter(MUSLIM == 1 & OPEC == 1)
+```
+
+### b) What is the difference in mean Freedom House score between Muslim and Non-Muslim countries? 
+
+Calculate it both by hand and using a regression, verifying that your answers are identical.
+
+- By hand
+
+```{r}
+mean(fishdata$FHREVERS[fishdata$MUSLIM == 1]) - mean(fishdata$FHREVERS[fishdata$MUSLIM == 0])
+```
+
+- By regression
+```{r}
+summary(lm(FHREVERS ~ MUSLIM, fishdata))
+```
+Muslim countries score on average 2.20 points less democratic than non-Muslim countries.
+
+
+### c) Is the difference in means in (b) likely to be biased? If so, in which direction and why?
+
+This is only a bivariate relationship, without any controls. In reality Muslim countries may be different than non-Muslim countries in many other ways that also affect their level of democracy, e.g. their level of economic development. This suggests that the measure is likely to be biased.
+
+Some obvious omitted variables, such as economic development, are likely to be positively correlated with a country’s democracy level but negatively correlated with being predominantly Muslim. This would imply that the difference in means is *biased downward*, because we have not accounted for the fact that predominantly Muslim countries are also poorer.
+
+Other potential omitted variables are likely to be negatively correlated with the democracy level but positively correlated with being predominantly Muslim, including OPEC member- ship (and therefore being a major oil-producing country). For instance, the ‘resource curse’ theory in political science suggests that access to oil revenues allows governments to buy off citizens without introducing democracy. Again, this suggests downward bias from having failed to account for the fact that predominantly Muslim societies are also more likely to be OPEC members.
+
+
+### T-tests
+
+d) Conduct a t-test for the difference in means in (b) using R’s t.test() function. Is the difference statistically significant?
+
+```{r}
+t.test(fishdata$FHREVERS[fishdata$MUSLIM==1], fishdata$FHREVERS[fishdata$MUSLIM==0])
+```
+The difference is statistically significant at any significance level, because the t-statistic is -9.63 and the p-value is extremely close to zero.
+
+e) Conduct the t-test again, this time coding it by hand. Confirm that your answer is identical to (d)
+
+```{r}
+d <- mean(fishdata$FHREVERS[fishdata$MUSLIM==1]) - mean(fishdata$FHREVERS[fishdata$MUSLIM==0])
+
+se <- sqrt(
+ var(fishdata$FHREVERS[fishdata$MUSLIM==1])/length(fishdata$FHREVERS[fishdata$MUSLIM==1]) +
+   var(fishdata$FHREVERS[fishdata$MUSLIM==0])/length(fishdata$FHREVERS[fishdata$MUSLIM==0])
+)
+
+d/se
+
+```
+
+### f) Calculate: 
+
+
+
