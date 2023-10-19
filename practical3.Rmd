@@ -7,10 +7,64 @@ output: html_document
 
 # Week 3: Randomised Experiments - Internal Validity
 
-### 
+### Question 1: Block Randomisation in the Benin Voting Field experiment
 
-```{r cars}
-summary(cars)
+```{r setup}
+library(tidyverse)
+load("data/benin.Rda")
+load("data/star_data.Rda")
 ```
 
-### 
+In this question, we study a field experiment on voting carried out in Benin in 2001 by Leonard Wantchekon. He investigated what types of campaign messages are most effective in increasing voter turnout in this developing African nation. 
+
+He persuaded three presidential campaigns to randomly use different types of campaign messages in different villages throughout the campaign. There were 16 villages in this part of the experiment, and randomisation was carried out by blocks. Villages were divided into blocks of 2 villages based on their geographic locations. Within each block, the two villages were assigned to one of two conditions:
+
+- Public Policy: Wantchekon describes this treatment condition as: “It was decided that any public policy platform would raise issues pertaining to national unity and peace, eradicating corruption, alleviating poverty, developing agriculture and industry, protecting the rights of women and children, developing rural credit, providing access to the judicial system, protect- ing the environment, and/or fostering educational reforms.”
+
+- Clientelist: Wantchekon describes this treatment as: “A clientelist message, by contrast, would take the form of a specific promise to the village, for example, for government patronage jobs or local public goods, such as establishing a new local university or providing financial support for local fishermen or cotton producers.”
+
+*a)  Using a suitable regression, perform a balance test with the reg.voters variable between villages in the two treatment conditions (ignoring the blocking). What do you conclude?*
+
+For a balance test, you can be either:
+
+- T-tests for equality of means in the baseline covariates between the treatment and control groups
+- Regress the treatment variable on the baseline covariates and test their individual and joint significance in explaining treatment assignment
+
+Let's do the second option.
+
+```{r}
+summary(lm(treat ~ reg.voters, data = b))
+```
+
+The regression coefficient is extremely close to zero, and the p-value is 0.951, which indicates that regressing the treatment variable on the number of registered voters in the village yields results statistically indistinguishable from zero. 
+
+That means that, even ignoring the blocking, there is strong evidence that randomisation was carried out correctly, at least in the case of the balance in registered voters.
+
+*b) Estimate the average treatment effect and its p-value using a regression (ignoring the blocking). Interpret the ATE precisely. Is it significant at the 5% level?*
+
+```{r}
+summary(lm(vote.pop ~ treat, data = b))
+```
+The estimated ATE is 0.15750, which represents the difference in the expected voter turnout between the treatment group (in the "clientelist" condition) and the control group (in the "public policy" condition). This suggests that assigning the clientelist condition has a positive effect on voter turnout.
+
+However, the p-value associated with the treatment variable is 0.0981. Since this p-value is greater than the conventional significance level of 0.05 (5%), we cannot conclude that the ATE is significant at the 5% level. In other words, there is not strong statistical evidence to suggest that the treatment (being in the "clientelist" condition) has a significant effect on voter turnout based on this analysis.
+
+*c)  Estimate the same average treatment effect, this time controlling for block membership. Are there any differences in the results compared to part (b)? Why or why not?*
+
+_Code Hint: Here, I need to control for block membership using a dummy variable for each block. The block numbers (1-8) are not meaningful in their own right. factor() can be used to turn a categorical variable into a full set of dummy variables, 1 for each category_
+
+```{r}
+summary(lm(vote.pop ~ treat + factor(block), data = b))
+```
+The estimated ATE is 0.15750, which represents the difference in the expected voter turnout between the treatment group (in the "clientelist" condition) and the control group (in the "public policy" condition), while controlling for the block membership.
+
+The p-value associated with the treatment variable is 0.041562. Since this p-value is less than 0.05 (5%), we can conclude that the ATE is statistically significant at the 5% level. In other words, there is evidence to suggest that the treatment has a significant positive effect on voter turnout, while accounting for block membership.
+
+Here, block randomisation has substantially reduced the standard error of the estimated ATE. The sample size is relatively small, so the strong effect of blocking is largely to due to removing ‘crazy’ randomizations from the sampling distribution of the ATE.
+
+### Question 2: Non-Compliance and Attrition on the Tennessee STAR experiment
+
+
+
+
+
