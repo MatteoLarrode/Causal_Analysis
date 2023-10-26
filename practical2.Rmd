@@ -88,4 +88,63 @@ The mean difference is now extremely close to zero. This demonstrates that on av
 
 Again, in any one instance the treatment and control groups will not be exactly alike, but across repeated randomisations, their potential outcomes are close to identical.
 
-### Question 2
+### Question 2: Analysing experiments
+
+Why do people bother to vote? One hypothesis is adherence to social norms. Voting is widely regarded as a civic duty and people worry that others will think badly of them if they fail to participate. According to this theory, voters may receive two different types of utility from voting;
+- (a) the intrinsic rewards from performing this duty
+- (b) the extrinsic rewards received when others observe them doing so. 
+
+To gauge the effects of priming intrinsic motives and applying varying degrees of extrinsic pressure on voting behaviour, Gerber, Green, and Larimer conducted a famous field experiment in Michigan prior to the August 2006 primary election
+
+```{r}
+load("data/gerber.Rda")
+```
+
+The first treatment, “civic duty”, involved sending a letter to the voter carrying the message “DO YOUR CIVIC DUTY - VOTE!”. The second treatment, “Neighbors” sent the same letter, but also informed the voter that who votes is public information (which is the case by law in the USA). It listed the recent voting record of each registered voter in the household and the voting records of those living nearby, and stated that a follow-up letter after the election would report back to the household and to their neighbours on who had voted and who had not. The idea was to see whether priming extrinsic motivations would encourage this treatment group to turn out more than the control group, who received no letter.
+
+a)  For both treatments, calculate the average treatment effect and test whether it is statistically significant.
+
+```{r}
+t.test(g$voting[g$civicduty==1], g$voting[g$control==1])
+t.test(g$voting[g$neighbors==1], g$voting[g$control==1])
+```
+The ATE for the civic duty treatment is 0.018 and the ATE for the neighbors treatment is 0.081. They have t-statistics of 6.9 and 30.2 respectively, meaning that they are both statistically significant at all conventional significance levels. Because the outcome variable is binary, the ATEs just tell us the differences in the probability that someone voted. Thus, the probability that someone voted in the “civic duty” group was 1.8 percentage points higher than the control group and the probability that someone voted in the “neighbors” group was 8.1 percentage points higher than the control group. The results support the idea that people have both intrinsic motivations to vote (since “civic duty” led to higher voting) and even stronger extrinsic motivations to vote (since public shaming led to even higher voting).
+
+b) For both treatment groups, compare the mean values of yob, sex and p2004 to the control group. Do the results suggest that randomisation was successful? Is selection bias likely to be a problem in this experiment?
+
+```{r}
+  t.test(g$sex[g$civicduty==1],g$sex[g$control==1])
+  t.test(g$yob[g$civicduty==1],g$yob[g$control==1])
+  t.test(g$p2004[g$civicduty==1],g$p2004[g$control==1])
+  t.test(g$sex[g$neighbors==1],g$sex[g$control==1])
+  t.test(g$yob[g$neighbors==1],g$yob[g$control==1])
+  t.test(g$p2004[g$neighbors==1],g$p2004[g$control==1])
+
+```
+In all cases, the difference between the treatment group and control group is tiny. This suggests that randomisation was successful.
+
+Under true randomisation the control group should provide a valid counterfactual for the treatment group, which means that the average characteristics of the two groups should be virtually identical. This also means that selection bias is unlikely to be a problem in this experiment. If randomisation was successful, there should be zero selection bias. However, it is worth pointing out three caveats:
+
+1. Although the differences are very tiny for the p2004 variable, the difference is statistically significant. As always in statistics, it is important to consider the size of an effect as well as its statistical significance. Here the dataset is huge, making it very easy for even tiny differences to be statistically significant, so this is probably not a major concern
+
+2.  If there had been large differences between the treatment and control groups, that would not necessarily mean that there was a failure of randomisation. It is per- fectly possible for such differences to emerge due to chance alone
+
+3.  Just because we found no difference in terms of observed variables, there could still be selection bias from unobserved variables. Nonetheless, such a case is unlikely when randomisation was successful.
+
+*Calculate the ATE for the the neighbors treatment using:*
+
+- A regression containing only neighbors
+```{r}
+# Subset to only neighbors and control observations
+g.reg <- g[g$neighbors==1|g$control==1,]
+
+summary(lm(voting ~ neighbors,data=g.reg))
+```
+- A regression containing neighbors and the three background characteristics
+```{r}
+summary(lm(voting ~ neighbors + sex + yob + p2004,data=g.reg))
+```
+In all cases, the results are virtually identical to the answer obtained in part (a) using a simple difference-in-means, although the standard errors are very slightly smaller. 
+
+- for (i): a simple regression with only the treatment variable is numerically exactly identical to a difference-in-means
+- for (ii): we would not expect adding in controls for background covariates to make much difference, since they are uncorrelated with the treatment variable (even though they are strongly correlated with the outcome). It is always the case in regression analysis that we can safely omit any variable that is uncorrelated with either the outcome or the existing independent variables.
