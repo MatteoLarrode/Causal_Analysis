@@ -54,12 +54,38 @@ The estimated ATE is close to the true ATE but not exactly the same. Any one ran
 
 #### e) Performance of experimental procedure over repeated randomisations, using a simulation ####
 ```{r}
+experiment.sim <- function(a){
+  a$rand <- sample(c(1:100))
+  a <- a[order(a$rand),]
+  a$tr <- c(rep(1,50),rep(0,50))
+  
+  mean(a$y1[a$tr==1]) - mean(a$y0[a$tr==0])
+  }
 
+sims <- replicate(10000,experiment.sim(a))
 
-
-
+mean(sims)
 ```
+The mean ATE is now extremely close to the true ATE. This shows that randomised experiments work! On average across repeated randomisations, we obtain the true ATE. 
 
+In any one instance, the estimate will not be exactly the same, but the estimator is unbiased because it recovers the true ATE in expectation, if we kept randomising over and over again.
 
+f) Finally, repeat (e), calculating the mean difference in potential outcomes under control (y0) between the treatment and control groups instead of the ATE. What is the mean difference from your 10,000 experiments?
+
+```{r}
+experiment.sim2 <- function(a){
+  a$rand <- sample(c(1:100))
+  a <- a[order(a$rand),]
+  a$tr <- c(rep(1,50),rep(0,50))
+  mean(a$y0[a$tr==1] - a$y0[a$tr==0])
+  }
+
+sims2 <- replicate(10000,experiment.sim2(a))
+
+mean(sims2)
+```
+The mean difference is now extremely close to zero. This demonstrates that on average, experiments remove selection bias. 
+
+Again, in any one instance the treatment and control groups will not be exactly alike, but across repeated randomisations, their potential outcomes are close to identical.
 
 ### Question 2
