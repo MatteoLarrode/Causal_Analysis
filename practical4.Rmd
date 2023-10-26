@@ -14,11 +14,41 @@ library(randomizr)
 load("data/practical4_data.Rda")
 ```
 
+a) Using a simple regression, calculate the ATE and its p-value from the experiment, ignoring blocking (suppose we didn’t realise this was a block-randomised experiment). Store the ATE as an object
+
+```{r}
+summary(lm(Y ~ Z, data = a))
+ate <- summary(lm(Y ~ Z, data = a))$coef[2]
+```
+b) Calculate the number of possible unique treatment vectors that can arise in this experiment, which has 7 treatment units and 7 control units.
+
+_Code Hint: Use the formula for combinations with replacement in the lecture slides, together with R’s factorial() command_
+
+```{r}
+combinations <- factorial(14)/(factorial(7)*factorial(14-7))
+```
+
+c) Using the following code, create a matrix of all possible permutations of treatment assignment, ignoring the blocking (it may take 1-2 minutes to run). Verify that it gives you the correct number, as calculated in (b).
+
+```{r}
+perms <- unique(replicate(50000,complete_ra(14)),MARGIN=2)
+```
+
+d) Now, create the null distribution of ATEs using the permutations matrix:
+
+i) Create an empty vector called “ates” using ates <- c().
+```{r}
+ates <- c()
+```
+
+ii) Using a for() loop, fill in this vector with the ATE under each possible permutation of treatment
+```{r}
+for(i in colnames(as.data.frame(perms))){
+  ates[i] <- i
+}
 
 
-
-
-
+```
 
 
 
