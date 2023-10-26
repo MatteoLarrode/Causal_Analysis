@@ -46,7 +46,19 @@ There is a small, but not statistically significant, difference in potential out
 _Why isn't the difference precisely equal to zero?_: randomisation isn’t guaranteed to completely equalise potential outcomes in any one instance. Instead, it does so in expectation over many repeated randomisations, as we show below.
 
 
+d) Find the *Average Treatment Effect from the experiment*. How similar is it to the true Average Treatment Effect?
+```{r}
+ mean(a$y1[a$tr==1]) - mean(a$y0[a$tr==0])
+```
+The estimated ATE is close to the true ATE but not exactly the same. Any one randomisation isn’t guaranteed to give the true ATE.
 
+#### e) Performance of experimental procedure over repeated randomisations, using a simulation ####
+```{r}
+
+
+
+
+```
 
 
 
