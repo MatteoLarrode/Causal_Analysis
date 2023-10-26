@@ -9,8 +9,45 @@ output: html_document
 
 ### Question 1: A demonstration of the logic behind randomised experiments
 
-```{r cars}
-summary(cars)
+We will demonstrate that randomised experiments work by creating an imaginary experiment. 
+
+```{r setup}
+library(tidyverse)
+load("data/experiment.Rda")
 ```
+
+This dataset includes the potential outcome under control (y0) and the potential outcome under treatment (y1) for 100 units that form the sample for our experiment.
+
+*This is a purely hypothetical scenario: In reality, we never observe potential outcomes under both treatment and control for the same units: we only observe one of them*
+
+a) Find the *true Average Treatment Effect* for all units, using y0 and y1
+
+```{r}
+mean(a$y1-a$y0)
+```
+
+b) Now, we’ll randomly assign half of the units to treatment and half to control by creating a new variable indicating treatment status. 
+
+```{r}
+set.seed(1) 
+
+a$rand <- sample(c(1:100))
+a <- a[order(a$rand),]
+a$tr <- c(rep(1,50),rep(0,50))
+```
+
+c) Conduct a test to assess whether the treatment and control groups have the same average potential outcomes under control (y0). Has randomisation succeeded in creating treatment and control groups with equivalent potential outcomes under control?
+
+```{r}
+t.test(a$y0[a$tr==1], a$y0[a$tr==0])
+```
+There is a small, but not statistically significant, difference in potential outcomes under control of 2.26 between the two groups (the p-value is 0.11). Thus, as expected, we cannot reject the null hypothesis that the potential outcomes under control are equal.
+
+_Why isn't the difference precisely equal to zero?_: randomisation isn’t guaranteed to completely equalise potential outcomes in any one instance. Instead, it does so in expectation over many repeated randomisations, as we show below.
+
+
+
+
+
 
 ### Question 2
