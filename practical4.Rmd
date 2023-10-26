@@ -1,0 +1,24 @@
+---
+title: "Practical 4"
+author: "Matteo Larrode"
+date: "2023-10-26"
+output: html_document
+---
+
+# Week 4: Randomised Experiments: Inference and External Validity
+
+```{r setup}
+library(tidyverse)
+library(randomizr)
+
+load("data/practical4_data.Rda")
+```
+
+
+
+
+
+
+
+
+
