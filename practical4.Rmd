@@ -43,12 +43,32 @@ ates <- c()
 
 ii) Using a for() loop, fill in this vector with the ATE under each possible permutation of treatment
 ```{r}
-for(i in colnames(as.data.frame(perms))){
-  ates[i] <- i
+col_outcome <- a$Y
+perms_df <- as.data.frame(perms)
+
+calc_ate <- function(treatment, outcome){
+  new_df <- tibble(treatment, outcome)
+  ate <- summary(lm(outcome ~ treatment, data = new_df))$coef[2]
+  
+  return(ate)
 }
 
 
+for(i in colnames(as.data.frame(perms))){
+  ates[i] <- calc_ate(perms_df[[i]], col_outcome)
+}
 ```
 
+e) Calculate the exact two-tailed p-value using 
+- the estimated ATE from (a)
+- the null distribution from (d), 
 
+and give a precise interpetation of it. Is it higher or lower than the p-value calculated the traditional way in (a)?
+
+_Hint: You need to calculate the proportion of the null distribution that is at least as extreme as the estimated ATE. It can help to start with a drawing_
+
+```{r}
+
+
+```
 
