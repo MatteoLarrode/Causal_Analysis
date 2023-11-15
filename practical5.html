@@ -478,7 +478,7 @@ balance differ before and after matching?</strong></p>
 ## 
 ## var ratio (Tr/Co).....    0.49589                  1 
 ## T-test p-value........     0.5848                  1 
-## KS Bootstrap p-value..      0.016                  1 
+## KS Bootstrap p-value..      0.022                  1 
 ## KS Naive p-value......   0.080986                  1 
 ## KS Statistic..........    0.11137         2.0762e-17 
 ## 
@@ -520,7 +520,7 @@ sample like this one.</p>
 re75 to the list of matching variables, using the Mahalanobis distance
 metric instead of exact matching. How good is balance after matching?
 Does the estimated ATT change?</strong></p>
-<pre class="r"><code> matching.vars2 &lt;- cbind(ldata$hispan,ldata$educ, ldata$married, ldata$re74, ldata$re75)
+<pre class="r"><code>matching.vars2 &lt;- cbind(ldata$hispan,ldata$educ, ldata$married, ldata$re74, ldata$re75)
   
 m2 &lt;- Match(Y=ldata$re78, Tr=ldata$treat, X=matching.vars2,Weight=2)
 summary.Match(m2)</code></pre>
@@ -570,7 +570,7 @@ summary.Match(m2)</code></pre>
 ## 
 ## var ratio (Tr/Co).....    0.49589             1.0275 
 ## T-test p-value........     0.5848            0.20554 
-## KS Bootstrap p-value..       0.02                  1 
+## KS Bootstrap p-value..      0.034              0.998 
 ## KS Naive p-value......   0.080986                  1 
 ## KS Statistic..........    0.11137          0.0085616 
 ## 
@@ -609,7 +609,7 @@ summary.Match(m2)</code></pre>
 ## 
 ## var ratio (Tr/Co).....    0.51813             1.1218 
 ## T-test p-value........ 1.7479e-12            0.42309 
-## KS Bootstrap p-value.. &lt; 2.22e-16              0.386 
+## KS Bootstrap p-value.. &lt; 2.22e-16              0.372 
 ## KS Naive p-value...... &lt; 2.22e-16            0.99608 
 ## KS Statistic..........    0.44704           0.023973 
 ## 
@@ -630,7 +630,7 @@ summary.Match(m2)</code></pre>
 ## 
 ## var ratio (Tr/Co).....    0.95629             1.4512 
 ## T-test p-value........  0.0011501         0.00069558 
-## KS Bootstrap p-value.. &lt; 2.22e-16              0.382 
+## KS Bootstrap p-value.. &lt; 2.22e-16              0.374 
 ## KS Naive p-value......  1.027e-09            0.99055 
 ## KS Statistic..........    0.28765           0.025685 
 ## 
@@ -645,6 +645,307 @@ balance is achieved after matching, except on re75, where a significant
 difference of around $238 remains between treated and untreated units.
 Nonetheless, this is much smaller than the difference in the unmatched
 sample.</p>
+<p><strong>e) Use race to create another dummy variable called white
+equalling 1 if a respondent is white, and 0 otherwise. Then estimate
+propensity scores for all units using a logistic regression of treatment
+on educ, hispan, white, married, age, nodegree, re74 and re75, adding
+the estimated scores to the original dataset as a new
+column</strong></p>
+<p>A propensity score is the estimated probability of treatment. This
+can be calculated from the regression using the fitted.values()
+function</p>
+<pre class="r"><code>ldata$white &lt;- ifelse(ldata$race==&quot;white&quot;,1,0)
+
+propscores &lt;- fitted.values(
+  glm(treat ~ age + educ + white + hispan + married + nodegree + re74 + re75, family = binomial, data = ldata)
+  )
+
+ldata &lt;- cbind(ldata,propscores)</code></pre>
+<p><strong>f) Repeat part (b) and (c) one more time, this time using
+only your estimated propensity scores to match. How good is balance
+after matching? Does the estimated ATT change?</strong></p>
+<pre class="r"><code>m3 &lt;- Match(Y = ldata$re78, Tr = ldata$treat, X = propscores, Weight = 2)
+summary.Match(m3)</code></pre>
+<pre><code>## 
+## Estimate...  1933.4 
+## AI SE......  1090.6 
+## T-stat.....  1.7728 
+## p.val......  0.076267 
+## 
+## Original number of observations..............  614 
+## Original number of treated obs...............  185 
+## Matched number of observations...............  185 
+## Matched number of observations  (unweighted).  287</code></pre>
+<pre class="r"><code>mbal3 &lt;- MatchBalance(
+  treat ~ age + educ + white + hispan + married + nodegree + re74 + re75, match.out = m3, data = ldata
+  )</code></pre>
+<pre><code>## 
+## ***** (V1) age *****
+##                        Before Matching        After Matching
+## mean treatment........     25.816             25.816 
+## mean control..........      28.03             24.309 
+## std mean diff.........    -30.945             21.061 
+## 
+## mean raw eQQ diff.....     3.2649             2.8641 
+## med  raw eQQ diff.....          1                  3 
+## max  raw eQQ diff.....         10                  9 
+## 
+## mean eCDF diff........   0.081339           0.073721 
+## med  eCDF diff........   0.082744           0.041812 
+## max  eCDF diff........    0.15773            0.27526 
+## 
+## var ratio (Tr/Co).....       0.44            0.53235 
+## T-test p-value........  0.0029143           0.084831 
+## KS Bootstrap p-value.. &lt; 2.22e-16         &lt; 2.22e-16 
+## KS Naive p-value......  0.0032205         7.1948e-10 
+## KS Statistic..........    0.15773            0.27526 
+## 
+## 
+## ***** (V2) educ *****
+##                        Before Matching        After Matching
+## mean treatment........     10.346             10.346 
+## mean control..........     10.235             10.306 
+## std mean diff.........     5.4965             2.0073 
+## 
+## mean raw eQQ diff.....     0.7027            0.41463 
+## med  raw eQQ diff.....          1                  0 
+## max  raw eQQ diff.....          4                  3 
+## 
+## mean eCDF diff........   0.034722           0.025697 
+## med  eCDF diff........   0.022768           0.022648 
+## max  eCDF diff........    0.11137           0.052265 
+## 
+## var ratio (Tr/Co).....    0.49589            0.57774 
+## T-test p-value........     0.5848            0.86824 
+## KS Bootstrap p-value..      0.024               0.45 
+## KS Naive p-value......   0.080986            0.82797 
+## KS Statistic..........    0.11137           0.052265 
+## 
+## 
+## ***** (V3) white *****
+##                        Before Matching        After Matching
+## mean treatment........   0.097297           0.097297 
+## mean control..........    0.65501           0.097568 
+## std mean diff.........    -187.68          -0.090949 
+## 
+## mean raw eQQ diff.....    0.55676          0.0069686 
+## med  raw eQQ diff.....          1                  0 
+## max  raw eQQ diff.....          1                  1 
+## 
+## mean eCDF diff........    0.27886          0.0034843 
+## med  eCDF diff........    0.27886          0.0034843 
+## max  eCDF diff........    0.55771          0.0069686 
+## 
+## var ratio (Tr/Co).....    0.38988            0.99753 
+## T-test p-value........ &lt; 2.22e-16            0.98737 
+## 
+## 
+## ***** (V4) hispan *****
+##                        Before Matching        After Matching
+## mean treatment........   0.059459           0.059459 
+## mean control..........    0.14219           0.064595 
+## std mean diff.........     -34.89            -2.1656 
+## 
+## mean raw eQQ diff.....   0.081081           0.010453 
+## med  raw eQQ diff.....          0                  0 
+## max  raw eQQ diff.....          1                  1 
+## 
+## mean eCDF diff........   0.041366          0.0052265 
+## med  eCDF diff........   0.041366          0.0052265 
+## max  eCDF diff........   0.082732           0.010453 
+## 
+## var ratio (Tr/Co).....    0.45991            0.92556 
+## T-test p-value........ 0.00070421            0.79204 
+## 
+## 
+## ***** (V5) married *****
+##                        Before Matching        After Matching
+## mean treatment........    0.18919            0.18919 
+## mean control..........    0.51282            0.12306 
+## std mean diff.........    -82.407             16.838 
+## 
+## mean raw eQQ diff.....    0.32432           0.020906 
+## med  raw eQQ diff.....          0                  0 
+## max  raw eQQ diff.....          1                  1 
+## 
+## mean eCDF diff........    0.16182           0.010453 
+## med  eCDF diff........    0.16182           0.010453 
+## max  eCDF diff........    0.32363           0.020906 
+## 
+## var ratio (Tr/Co).....    0.61589             1.4214 
+## T-test p-value........ &lt; 2.22e-16           0.041066 
+## 
+## 
+## ***** (V6) nodegree *****
+##                        Before Matching        After Matching
+## mean treatment........    0.70811            0.70811 
+## mean control..........    0.59674            0.71599 
+## std mean diff.........     24.431            -1.7292 
+## 
+## mean raw eQQ diff.....    0.11351            0.04878 
+## med  raw eQQ diff.....          0                  0 
+## max  raw eQQ diff.....          1                  1 
+## 
+## mean eCDF diff........   0.055686            0.02439 
+## med  eCDF diff........   0.055686            0.02439 
+## max  eCDF diff........    0.11137            0.04878 
+## 
+## var ratio (Tr/Co).....    0.86157             1.0164 
+## T-test p-value........  0.0069822            0.86714 
+## 
+## 
+## ***** (V7) re74 *****
+##                        Before Matching        After Matching
+## mean treatment........     2095.6             2095.6 
+## mean control..........     5619.2             2473.1 
+## std mean diff.........    -72.108             -7.725 
+## 
+## mean raw eQQ diff.....     3620.9             727.01 
+## med  raw eQQ diff.....     2425.6             96.004 
+## max  raw eQQ diff.....     9216.5              13122 
+## 
+## mean eCDF diff........    0.22479           0.056807 
+## med  eCDF diff........    0.23353           0.031359 
+## max  eCDF diff........    0.44704            0.22648 
+## 
+## var ratio (Tr/Co).....    0.51813             1.0333 
+## T-test p-value........ 1.7479e-12            0.38667 
+## KS Bootstrap p-value.. &lt; 2.22e-16         &lt; 2.22e-16 
+## KS Naive p-value...... &lt; 2.22e-16         8.0848e-07 
+## KS Statistic..........    0.44704            0.22648 
+## 
+## 
+## ***** (V8) re75 *****
+##                        Before Matching        After Matching
+## mean treatment........     1532.1             1532.1 
+## mean control..........     2466.5               1573 
+## std mean diff.........    -29.026            -1.2724 
+## 
+## mean raw eQQ diff.....     1060.7             479.61 
+## med  raw eQQ diff.....      981.1              277.5 
+## max  raw eQQ diff.....       6795              11366 
+## 
+## mean eCDF diff........    0.13417           0.074125 
+## med  eCDF diff........    0.13551           0.052265 
+## max  eCDF diff........    0.28765            0.21254 
+## 
+## var ratio (Tr/Co).....    0.95629             2.1048 
+## T-test p-value........  0.0011501            0.88045 
+## KS Bootstrap p-value.. &lt; 2.22e-16         &lt; 2.22e-16 
+## KS Naive p-value......  1.027e-09         4.6809e-06 
+## KS Statistic..........    0.28765            0.21254 
+## 
+## 
+## Before Matching Minimum p.value: &lt; 2.22e-16 
+## Variable Name(s): age white married re74 re75  Number(s): 1 3 5 7 8 
+## 
+## After Matching Minimum p.value: &lt; 2.22e-16 
+## Variable Name(s): age re74 re75  Number(s): 1 7 8</code></pre>
+<p>The estimated ATT is now $1933.40 with a standard error of 1090.60,
+making the effect sig- nificant at the 10% significance level. Balance
+after matching is in general very good, based on the t-test results.
+There are statistically significant differences for age and married, but
+in practical terms the differences are quite small (and much smaller
+than in the unmatched sample).</p>
+<p>In general this question demonstrates the importance of selection
+bias. In the unmatched sample (part a), the training program has a very
+small effect that is statistically indistin- guishable from zero. This
+is probably due to people with low potential outcomes selecting into
+training. As we get closer to comparing “apples with apples” in part
+(f), we can see that training probably has a substantial positive
+effect. This is only visible when we compare the treated group to
+controls who were as similar as possible to the treatment group in every
+way except for taking the treatment.</p>
+<p><strong>g) An alternative to the matching estimator is to carry out
+matching, and then run a regression on the matched dataset. Do this
+using the following steps:</strong></p>
+<ol style="list-style-type: lower-roman">
+<li>Estimate the ATT from matching as in part (f), this time with the
+option ties=FALSE. Your estimate will be similar but not identical to
+(f)</li>
+</ol>
+<p>This makes things less complicated for the sake of this example:</p>
+<ul>
+<li><p>without ties=FALSE, the matching estimator includes all ties and
+weights tied observations. To get a regression estimate that is similar
+to the matched estimate, we would also have to weight our
+regression.</p></li>
+<li><p>with ties=FALSE, R instead breaks the ties at random, selecting
+only one of the tied observations, so our regression does not need to be
+weighted.</p></li>
+</ul>
+<p>In general it is more principled to use ties=TRUE since we do not
+arbitrarily throw away data in that scenario. Note that it is also
+possible to reduce the number of ties using the distance.tolerance
+option</p>
+<pre class="r"><code>m4 &lt;- Match(Y=ldata$re78, Tr=ldata$treat, X=propscores,Weight=2,ties=F)
+summary.Match(m4)</code></pre>
+<pre><code>## 
+## Estimate...  1767.8 
+## SE.........  718.3 
+## T-stat.....  2.461 
+## p.val......  0.013854 
+## 
+## Original number of observations..............  614 
+## Original number of treated obs...............  185 
+## Matched number of observations...............  185 
+## Matched number of observations  (unweighted).  185</code></pre>
+<ol start="2" style="list-style-type: lower-roman">
+<li>Create a dataset of only the observations used in matching in
+(i)</li>
+</ol>
+<pre class="r"><code>ldata.tr &lt;- ldata[m4$index.treated,]
+ldata.con &lt;- ldata[m4$index.control,]
+
+ldata.reg &lt;- rbind(ldata.tr,ldata.con)</code></pre>
+<ol start="3" style="list-style-type: lower-roman">
+<li>Run a regression using only your dataset from (ii)</li>
+</ol>
+<pre class="r"><code>summary(lm(re78 ~ treat, data = ldata.reg))</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = re78 ~ treat, data = ldata.reg)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+##  -6349  -4581  -2300   2952  53959 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   4581.4      503.0   9.108   &lt;2e-16 ***
+## treat         1767.8      711.4   2.485   0.0134 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 6842 on 368 degrees of freedom
+## Multiple R-squared:  0.0165, Adjusted R-squared:  0.01383 
+## F-statistic: 6.175 on 1 and 368 DF,  p-value: 0.0134</code></pre>
+<p>This estimate, without including controls, is identical to the
+matching estimate in (i). This makes sense because a regression with
+only a single binary variable is the same as a difference in means.</p>
+<pre class="r"><code>summary(lm(re78 ~ treat + propscores, data = ldata.reg))</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = re78 ~ treat + propscores, data = ldata.reg)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+##  -7523  -4603  -2347   2964  54412 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   5806.1     1060.8   5.473  8.2e-08 ***
+## treat         1769.9      710.7   2.490   0.0132 *  
+## propscores   -2124.6     1620.7  -1.311   0.1907    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 6835 on 367 degrees of freedom
+## Multiple R-squared:  0.02109,    Adjusted R-squared:  0.01575 
+## F-statistic: 3.953 on 2 and 367 DF,  p-value: 0.02002</code></pre>
+<p>With controls, the two estimates will be very similar but not
+identical. Including controls can be helpful, just like in an
+experiment, if some imbalances remain after matching.</p>
 </div>
 
 
