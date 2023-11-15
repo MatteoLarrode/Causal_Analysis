@@ -23,7 +23,7 @@ He persuaded three presidential campaigns to randomly use different types of cam
 
 - Clientelist: Wantchekon describes this treatment as: “A clientelist message, by contrast, would take the form of a specific promise to the village, for example, for government patronage jobs or local public goods, such as establishing a new local university or providing financial support for local fishermen or cotton producers.”
 
-*a)  Using a suitable regression, perform a balance test with the reg.voters variable between villages in the two treatment conditions (ignoring the blocking). What do you conclude?*
+**a)  Using a suitable regression, perform a balance test with the reg.voters variable between villages in the two treatment conditions (ignoring the blocking). What do you conclude?**
 
 For a balance test, you can be either:
 
@@ -40,7 +40,7 @@ There is no evidence of imbalance between villages in the two treatment conditio
 
 That means that, even ignoring the blocking, there is strong evidence that randomisation was carried out correctly, at least in the case of the balance in registered voters.
 
-*b) Estimate the average treatment effect and its p-value using a regression (ignoring the blocking). Interpret the ATE precisely. Is it significant at the 5% level?*
+**b) Estimate the average treatment effect and its p-value using a regression (ignoring the blocking). Interpret the ATE precisely. Is it significant at the 5% level?**
 
 ```{r}
 summary(lm(vote.pop ~ treat, data = b))
@@ -52,9 +52,9 @@ t.test(b$vote.pop[b$treat == 1], b$vote.pop[b$treat == 0])
 ```
 Using a t-test the p-value is 0.11, meaning that the result is not statistically significant.
 
-*c)  Estimate the same average treatment effect, this time controlling for block membership. Are there any differences in the results compared to part (b)? Why or why not?*
+**c)  Estimate the same average treatment effect, this time controlling for block membership. Are there any differences in the results compared to part (b)? Why or why not?**
 
-_Code Hint: Here, I need to control for block membership using a dummy variable for each block. The block numbers (1-8) are not meaningful in their own right. factor() can be used to turn a categorical variable into a full set of dummy variables, 1 for each category_
+*Code Hint: Here, I need to control for block membership using a dummy variable for each block. The block numbers (1-8) are not meaningful in their own right. factor() can be used to turn a categorical variable into a full set of dummy variables, 1 for each category*
 
 ```{r}
 summary(lm(vote.pop ~ treat + factor(block), data = b))
@@ -69,13 +69,13 @@ The dataset for this problem only contains students in the “small classes” o
 
 A key problem with the experiment was that some children left the study early, and others did not comply with their assignments to treatment and control. In this problem we are going to assess both attrition and non-compliance.
 
-*a) Create a variable called “treat” that equals 1 if a child was assigned to a small class in kindergarten and 0 otherwise*
+**a) Create a variable called “treat” that equals 1 if a child was assigned to a small class in kindergarten and 0 otherwise**
 
 ```{r}
 s$treat <- ifelse(s$gkclasstype == "SMALL CLASS", 1, 0)
 ```
 
-*b) Using t tests, obtain p-values to assess the null hypotheses of no imbalance between the “small class” and “regular class” groups in terms of gender, race or free lunches. What do you conclude about balance between the two groups?*
+**b) Using t tests, obtain p-values to assess the null hypotheses of no imbalance between the “small class” and “regular class” groups in terms of gender, race or free lunches. What do you conclude about balance between the two groups?**
 
 ```{r}
 t.test(s$gender[s$treat == 1], s$gender[s$treat == 0])
@@ -84,7 +84,7 @@ t.test(s$gkfreelunch[s$treat == 1], s$gkfreelunch[s$treat == 0])
 ```
 For gender and free lunch, we cannot reject the null hypothesis of no difference between the two groups of students at a 5% significance level. This suggests that there was not a faikure of randomisation. For race, children in small classes were slightly less likely to be black (31.6% versus 35.8%), a difference that is statistically significant. This may have occurred if white parents were ‘pushier’ and worked to get their children’s assignment changed to a small class. It could be a source of concern if race is also correlated with educational achievement (e.g., because black families tend to have lower incomes). This would mean that the children in small classes may have been higher-achieving on average, even before the experiment began.
 
-*c) Calculate Average Treatment Effects for both maths and reading scores in kindergarten, for children in small classes compared to regular classes. Estimate results with and without controlling for the school attended. Interpret the results, including their statistical significance*
+**c) Calculate Average Treatment Effects for both maths and reading scores in kindergarten, for children in small classes compared to regular classes. Estimate results with and without controlling for the school attended. Interpret the results, including their statistical significance**
 
 ```{r}
 summary(lm(gktreadss ~ treat, data = s))
@@ -95,7 +95,7 @@ summary(lm(gktmathss ~ treat + factor(gkschid), data = s))
 ```
 The results show that being in a small class compared to a regular class leads to an 8.44-unit increase in reading score and an 12.12-unit increase in maths score, when controlling for school. Also, the results are slightly larger when controlling for school. All results are significant at all conventional significance levels.
 
-*d) Calculate the proportion of children who left the experiment (i.e., attrition) between kindergarten and first grade, accounting for both children who are missing from the sample in first grade altogether, and children who did not report outcome data in first grade.*
+**d) Calculate the proportion of children who left the experiment (i.e., attrition) between kindergarten and first grade, accounting for both children who are missing from the sample in first grade altogether, and children who did not report outcome data in first grade.**
 
 ```{r}
 # Defining attrition as anyone who did not take part in first grade or
@@ -117,7 +117,7 @@ sum(s$missing) / length(s$missing)
 ```
 Attrition was very high between kindergarten and first grade, although the answer will differ slightly depending on exactly how you defined attrition here. Defining attrition as anyone who did not take part in first grade or didn’t report one of maths or reading scores, it was 38.9%. Or, if we define it as as anyone who did not take part in first grade or didn’t report both maths and reading scores, it was 37.1%.
 
-*e) Assuming missingness-at-random, calculate ATEs and standard errors for maths and reading scores in the first grade, controlling for school attended. Interpret your results*
+**e) Assuming missingness-at-random, calculate ATEs and standard errors for maths and reading scores in the first grade, controlling for school attended. Interpret your results**
 
 ```{r}
 s$treat2 <- ifelse(s$g1classtype == "SMALL CLASS", 1, 0)
@@ -127,9 +127,9 @@ summary(lm(g1tmathss ~ treat2 + factor(gkschid),data=s))
 ```
 The results show that being in a small class compared to a regular class in first grade led to a 17.1-unit increase in reading score and an 11.9-unit increase in maths score. Both results are significant at all conventional significance levels.
 
-*f) Assess the extent of non-compliance amongst children in first grade by calculating:*
+**f) Assess the extent of non-compliance amongst children in first grade by calculating:**
 
-*i) The proportion of children who were assigned to regular classes in kindergarten that were enrolled in small classes in first grade*
+**i) The proportion of children who were assigned to regular classes in kindergarten that were enrolled in small classes in first grade**
 
 ```{r}
 length(s$g1classtype[
@@ -147,9 +147,9 @@ This is two-sided non-compliance: 8.1% of children initially assigned to regular
 
 The pattern is not surprising: since small classes were more desirable, parents were more likely to try to push their children into smaller classes than the other way around. Thus even if there was missingness-at-random (an unlikely assumption) there is still an issue with non-compliance in this experiment.
 
-*g) [Challenging Question] Calculate extreme-value bounds for the ATE for first-grade reading scores in part (e), using the highest and lowest observed test scores. Do these bounds suggest that attrition between kindergarten and first grade threatens the validity of the ATEs calculated in (e), or not?*
+**g) [Challenging Question] Calculate extreme-value bounds for the ATE for first-grade reading scores in part (e), using the highest and lowest observed test scores. Do these bounds suggest that attrition between kindergarten and first grade threatens the validity of the ATEs calculated in (e), or not?**
 
-_Upper bound_: start by creating a new dataset with new treatment variable, filling in missing values for class types in first grade by assuming that they would have been the same as in kindergarten
+*Upper bound*: start by creating a new dataset with new treatment variable, filling in missing values for class types in first grade by assuming that they would have been the same as in kindergarten
 
 ```{r}
 s.upper <- s
@@ -169,7 +169,7 @@ summary(ate.reading.upper)$coef[2,]
 
 ```
 
-_Lower bound_: start by creating a new dataset with new treatment variable, filling in missing values for class types in first grade by assuming that they would have been the same as in kindergarten
+*Lower bound*: start by creating a new dataset with new treatment variable, filling in missing values for class types in first grade by assuming that they would have been the same as in kindergarten
 
 ```{r}
 s.lower <- s
@@ -191,5 +191,6 @@ summary(ate.reading.lower)$coef[2,]
 ```
 This gives bounds of [−86.4, 103.0] for the reading scores. These intervals contain the ATE estimated in part (e) and are very wide, encompassing negative treatment effects. This suggests that attrition could threaten the validity of the ATEs calculated in part (e). Nonetheless it is worth remembering that these intervals represent extreme scenarios. In reality, attrition is unlikely to be as extreme as this.
 
-*h) [Challenging Question] Briefly, explain (using words only) why the two sets of standard errors obtained in part (c) differ depending on whether school is controlled for*
+**h) [Challenging Question] Briefly, explain (using words only) why the two sets of standard errors obtained in part (c) differ depending on whether school is controlled for**
+
 Randomisation was carried out within each school rather than across schools, so this is akin to a case of block randomisation. As we would expect, schools are very predictive of the outcomes (some schools are better than others), so controlling for school leads to an increase in the precision of the estimated ATEs (i.e., lower standard errors).
