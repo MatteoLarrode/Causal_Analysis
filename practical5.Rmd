@@ -1,0 +1,125 @@
+---
+title: "Practical 5"
+author: "Matteo Larrode"
+date: "2023-11-15"
+output: html_document
+---
+
+# Week 5: Matching, Propensity scores and Regression
+
+We’ll use a famous example of the effects of matching: a dataset from LaLonde’s evaluation of economic training programs in the United States. The study used observational data from a treatment group of people who took part in the National Supported Work Demonstration (NSW), a job training program in the mid 1970s. The control group is a sample of people who did not go through training, taken from the Current Population Survey (CPS). Treatment assignment was not random. The outcome of interest was income after the program had finished, in 1978: did participation in job training raise subsequent earnings?
+
+```{r setup}
+knitr::opts_chunk$set(output = FALSE)
+library(MatchIt)
+library(Matching)
+
+ldata <- MatchIt::lalonde
+```
+
+**a) Use race to create a dummy variable called hispan equalling 1 if a respondent is hispanic, and 0 otherwise. Then regress income in 1978 on the treatment, controlling for hispan, educ and married. Carefully interpret the estimated Average Treatment Effect of training? Is it statistically significant?**
+
+```{r}
+ldata$hispan <- ifelse(ldata$race == "hispan", 1, 0)
+
+summary(lm(re78 ~ treat + hispan + educ + married, data = ldata))
+```
+The ATE here is simply the coefficient on treat. This implies that receiving training was associated with earning $300.04 more than the control group [note that I am not using causal language here]. It is not statistically significant (p=0.66).
+
+**b) Now, carry out exact matching to find the effect of treatment on income in 1978, matching on educ, hispan and married. Carefully interpret the ATT, and report its p-value. Does the result differ from part (a)?**
+
+```{r}
+matching.vars1 <- cbind(ldata$hispan,ldata$educ, ldata$married)
+m1 <- Match(Y=ldata$re78, Tr=ldata$treat, X=matching.vars1, exact=TRUE)
+
+summary.Match(m1)
+```
+The ATT of $447.89 implies that amongst the treatment group, training was associated with earning $447.90 more than the control group, and its p-value is 0.54. The result is similar to part (a), but not exactly the same. This is partly because we are now focusing on a smaller number of observations.
+
+**c) Examine balance between treated and untreated units before and after matching, using t- tests for equality of means. How does balance differ before and after matching?**
+
+```{r}
+mbal1  <- MatchBalance(treat ~ hispan + educ + married, match.out=m1, data=ldata)
+```
+For two of the three variables, there were large and statistically significant imbalances in the original dataset (i.e., before matching). 6% of the treated units are hispanic compared to 14% of the controls, and 19% of treated units are married compared to 51% of control units. Balance was better on education before matching, though. To the extent that being married and being hispanic affect earnings, this could lead to a biased estimate without matching.
+
+In the matched sample, balance is completely perfect across all three variables because we are using exact matching. With only three variables, it is relatively easy to find exact matches in a fairly large sample like this one.
+
+**d) Now repeat parts (b) and (c) with the addition of re74 and re75 to the list of matching variables, using the Mahalanobis distance metric instead of exact matching. How good is balance after matching? Does the estimated ATT change?**
+
+```{r}
+matching.vars2 <- cbind(ldata$hispan,ldata$educ, ldata$married, ldata$re74, ldata$re75)
+  
+m2 <- Match(Y=ldata$re78, Tr=ldata$treat, X=matching.vars2,Weight=2)
+summary.Match(m2)
+
+mbal2  <- MatchBalance(treat ~ hispan + educ + married + re74 + re75, match.out=m2, data=ldata)
+
+```
+The estimated ATT is now $697.12 with a p-value of 0.47. Near-perfect balance is achieved after matching, except on re75, where a significant difference of around $238 remains between treated and untreated units. Nonetheless, this is much smaller than the difference in the unmatched sample.
+
+**e) Use race to create another dummy variable called white equalling 1 if a respondent is white, and 0 otherwise. Then estimate propensity scores for all units using a logistic regression of treatment on educ, hispan, white, married, age, nodegree, re74 and re75, adding the estimated scores to the original dataset as a new column**
+
+A propensity score is the estimated probability of treatment. This can be calculated from the regression using the fitted.values() function
+
+```{r}
+ldata$white <- ifelse(ldata$race=="white",1,0)
+
+propscores <- fitted.values(
+  glm(treat ~ age + educ + white + hispan + married + nodegree + re74 + re75, family = binomial, data = ldata)
+  )
+
+ldata <- cbind(ldata,propscores)
+```
+
+**f) Repeat part (b) and (c) one more time, this time using only your estimated propensity scores to match. How good is balance after matching? Does the estimated ATT change?**
+
+```{r}
+m3 <- Match(Y = ldata$re78, Tr = ldata$treat, X = propscores, Weight = 2)
+summary.Match(m3)
+
+mbal3 <- MatchBalance(
+  treat ~ age + educ + white + hispan + married + nodegree + re74 + re75, match.out = m3, data = ldata
+  )
+```
+The estimated ATT is now $1933.40 with a standard error of 1090.60, making the effect sig- nificant at the 10% significance level. Balance after matching is in general very good, based on the t-test results. There are statistically significant differences for age and married, but in practical terms the differences are quite small (and much smaller than in the unmatched sample).
+
+In general this question demonstrates the importance of selection bias. In the unmatched sample (part a), the training program has a very small effect that is statistically indistin- guishable from zero. This is probably due to people with low potential outcomes selecting into training. As we get closer to comparing “apples with apples” in part (f), we can see that training probably has a substantial positive effect. This is only visible when we compare the treated group to controls who were as similar as possible to the treatment group in every way except for taking the treatment.
+
+**g) An alternative to the matching estimator is to carry out matching, and then run a regression on the matched dataset. Do this using the following steps:**
+
+i)  Estimate the ATT from matching as in part (f), this time with the option ties=FALSE. Your estimate will be similar but not identical to (f)
+
+This makes things less complicated for the sake of this example: 
+
+- without ties=FALSE, the matching estimator includes all ties and weights tied observations. To get a regression estimate that is similar to the matched estimate, we would also have to weight our regression. 
+
+- with ties=FALSE, R instead breaks the ties at random, selecting only one of the tied observations, so our regression does not need to be weighted. 
+
+In general it is more principled to use ties=TRUE since we do not arbitrarily throw away data in that scenario. Note that it is also possible to reduce the number of ties using the distance.tolerance option
+
+
+```{r}
+m4 <- Match(Y=ldata$re78, Tr=ldata$treat, X=propscores,Weight=2,ties=F)
+summary.Match(m4)
+```
+ii) Create a dataset of only the observations used in matching in (i)
+
+```{r}
+ldata.tr <- ldata[m4$index.treated,]
+ldata.con <- ldata[m4$index.control,]
+
+ldata.reg <- rbind(ldata.tr,ldata.con)
+```
+
+iii) Run a regression using only your dataset from (ii)
+
+```{r}
+summary(lm(re78 ~ treat, data = ldata.reg))
+```
+This estimate, without including controls, is identical to the matching estimate in (i). This makes sense because a regression with only a single binary variable is the same as a difference in means.
+
+```{r}
+summary(lm(re78 ~ treat + propscores, data = ldata.reg))
+```
+With controls, the two estimates will be very similar but not identical. Including controls can be helpful, just like in an experiment, if some imbalances remain after matching.
