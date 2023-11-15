@@ -36,7 +36,7 @@ Let's do the second option.
 summary(lm(treat ~ reg.voters, data = b))
 ```
 
-The regression coefficient is extremely close to zero, and the p-value is 0.951, which indicates that regressing the treatment variable on the number of registered voters in the village yields results statistically indistinguishable from zero. 
+There is no evidence of imbalance between villages in the two treatment conditions, based on this covariate. The coefficient is extremely close to zero and not statistically significant, as we would expect.
 
 That means that, even ignoring the blocking, there is strong evidence that randomisation was carried out correctly, at least in the case of the balance in registered voters.
 
@@ -45,9 +45,12 @@ That means that, even ignoring the blocking, there is strong evidence that rando
 ```{r}
 summary(lm(vote.pop ~ treat, data = b))
 ```
-The estimated ATE is 0.15750, which represents the difference in the expected voter turnout between the treatment group (in the "clientelist" condition) and the control group (in the "public policy" condition). This suggests that assigning the clientelist condition has a positive effect on voter turnout.
+The ATE suggests that using clientelist rather than public policy messages boosted a village’s turnout by 15.75 percentage points.
 
-However, the p-value associated with the treatment variable is 0.0981. Since this p-value is greater than the conventional significance level of 0.05 (5%), we cannot conclude that the ATE is significant at the 5% level. In other words, there is not strong statistical evidence to suggest that the treatment (being in the "clientelist" condition) has a significant effect on voter turnout based on this analysis.
+```{r}
+t.test(b$vote.pop[b$treat == 1], b$vote.pop[b$treat == 0])
+```
+Using a t-test the p-value is 0.11, meaning that the result is not statistically significant.
 
 *c)  Estimate the same average treatment effect, this time controlling for block membership. Are there any differences in the results compared to part (b)? Why or why not?*
 
@@ -56,15 +59,137 @@ _Code Hint: Here, I need to control for block membership using a dummy variable 
 ```{r}
 summary(lm(vote.pop ~ treat + factor(block), data = b))
 ```
-The estimated ATE is 0.15750, which represents the difference in the expected voter turnout between the treatment group (in the "clientelist" condition) and the control group (in the "public policy" condition), while controlling for the block membership.
-
-The p-value associated with the treatment variable is 0.041562. Since this p-value is less than 0.05 (5%), we can conclude that the ATE is statistically significant at the 5% level. In other words, there is evidence to suggest that the treatment has a significant positive effect on voter turnout, while accounting for block membership.
-
-Here, block randomisation has substantially reduced the standard error of the estimated ATE. The sample size is relatively small, so the strong effect of blocking is largely to due to removing ‘crazy’ randomizations from the sampling distribution of the ATE.
+The ATE is unchanged, as expected. However, the p-value is substantially reduced, so that the effect is now significant at the 5% level. This illustrates how useful blocking is in small samples like this one. It is like a ‘free lunch.’ We still get the correct coefficient, now estimated with greater precision.
 
 ### Question 2: Non-Compliance and Attrition on the Tennessee STAR experiment
 
+For this question we will examine the original data from the Tennessee STAR experiment. Recall that in the original study, within schools students were randomly assigned to “small”, “regular” or “regular plus aide” classes for four years. 
 
+The dataset for this problem only contains students in the “small classes” or “regular classes” conditions for kindergarten and 1st grade only (the first two years of the study).
 
+A key problem with the experiment was that some children left the study early, and others did not comply with their assignments to treatment and control. In this problem we are going to assess both attrition and non-compliance.
 
+*a) Create a variable called “treat” that equals 1 if a child was assigned to a small class in kindergarten and 0 otherwise*
 
+```{r}
+s$treat <- ifelse(s$gkclasstype == "SMALL CLASS", 1, 0)
+```
+
+*b) Using t tests, obtain p-values to assess the null hypotheses of no imbalance between the “small class” and “regular class” groups in terms of gender, race or free lunches. What do you conclude about balance between the two groups?*
+
+```{r}
+t.test(s$gender[s$treat == 1], s$gender[s$treat == 0])
+t.test(s$race[s$treat == 1], s$race[s$treat == 0])
+t.test(s$gkfreelunch[s$treat == 1], s$gkfreelunch[s$treat == 0])
+```
+For gender and free lunch, we cannot reject the null hypothesis of no difference between the two groups of students at a 5% significance level. This suggests that there was not a faikure of randomisation. For race, children in small classes were slightly less likely to be black (31.6% versus 35.8%), a difference that is statistically significant. This may have occurred if white parents were ‘pushier’ and worked to get their children’s assignment changed to a small class. It could be a source of concern if race is also correlated with educational achievement (e.g., because black families tend to have lower incomes). This would mean that the children in small classes may have been higher-achieving on average, even before the experiment began.
+
+*c) Calculate Average Treatment Effects for both maths and reading scores in kindergarten, for children in small classes compared to regular classes. Estimate results with and without controlling for the school attended. Interpret the results, including their statistical significance*
+
+```{r}
+summary(lm(gktreadss ~ treat, data = s))
+summary(lm(gktreadss ~ treat + factor(gkschid), data = s))
+
+summary(lm(gktmathss ~ treat, data = s))
+summary(lm(gktmathss ~ treat + factor(gkschid), data = s))
+```
+The results show that being in a small class compared to a regular class leads to an 8.44-unit increase in reading score and an 12.12-unit increase in maths score, when controlling for school. Also, the results are slightly larger when controlling for school. All results are significant at all conventional significance levels.
+
+*d) Calculate the proportion of children who left the experiment (i.e., attrition) between kindergarten and first grade, accounting for both children who are missing from the sample in first grade altogether, and children who did not report outcome data in first grade.*
+
+```{r}
+# Defining attrition as anyone who did not take part in first grade or
+# didn’t report one of maths OR reading scores
+s$missing <- ifelse(
+  is.na(s$g1classtype) | is.na(s$g1treadss) | is.na(s$g1tmathss), 1, 0
+)
+
+sum(s$missing) / length(s$missing)
+
+# Defining attrition as anyone who did not take part in first grade or
+# didn’t report both maths AND reading scores
+s$missing <- ifelse(
+  (is.na(s$g1classtype)) |
+    (is.na(s$g1treadss) & is.na(s$g1tmathss)), 1, 0
+)
+
+sum(s$missing) / length(s$missing)
+```
+Attrition was very high between kindergarten and first grade, although the answer will differ slightly depending on exactly how you defined attrition here. Defining attrition as anyone who did not take part in first grade or didn’t report one of maths or reading scores, it was 38.9%. Or, if we define it as as anyone who did not take part in first grade or didn’t report both maths and reading scores, it was 37.1%.
+
+*e) Assuming missingness-at-random, calculate ATEs and standard errors for maths and reading scores in the first grade, controlling for school attended. Interpret your results*
+
+```{r}
+s$treat2 <- ifelse(s$g1classtype == "SMALL CLASS", 1, 0)
+
+summary(lm(g1treadss ~ treat2 + factor(gkschid),data=s))
+summary(lm(g1tmathss ~ treat2 + factor(gkschid),data=s))
+```
+The results show that being in a small class compared to a regular class in first grade led to a 17.1-unit increase in reading score and an 11.9-unit increase in maths score. Both results are significant at all conventional significance levels.
+
+*f) Assess the extent of non-compliance amongst children in first grade by calculating:*
+
+*i) The proportion of children who were assigned to regular classes in kindergarten that were enrolled in small classes in first grade*
+
+```{r}
+length(s$g1classtype[
+  s$g1classtype == "SMALL CLASS" & s$gkclasstype == "REGULAR CLASS" & !is.na(s$g1classtype)
+]) /
+  length(s$gkclasstype[s$gkclasstype == "REGULAR CLASS"])
+```
+```{r}
+length(s$g1classtype[
+  s$g1classtype == "REGULAR CLASS" & s$gkclasstype == "SMALL CLASS" & !is.na(s$g1classtype)
+]) /
+  length(s$gkclasstype[s$gkclasstype == "SMALL CLASS"])
+```
+This is two-sided non-compliance: 8.1% of children initially assigned to regular classes were in small classes in first grade, while 3.1% of children initially assigned to small classes were in regular classes in first grade. 
+
+The pattern is not surprising: since small classes were more desirable, parents were more likely to try to push their children into smaller classes than the other way around. Thus even if there was missingness-at-random (an unlikely assumption) there is still an issue with non-compliance in this experiment.
+
+*g) [Challenging Question] Calculate extreme-value bounds for the ATE for first-grade reading scores in part (e), using the highest and lowest observed test scores. Do these bounds suggest that attrition between kindergarten and first grade threatens the validity of the ATEs calculated in (e), or not?*
+
+_Upper bound_: start by creating a new dataset with new treatment variable, filling in missing values for class types in first grade by assuming that they would have been the same as in kindergarten
+
+```{r}
+s.upper <- s
+s.upper$treat3 <- ifelse(is.na(s.upper$treat2), s.upper$treat, s.upper$treat2)
+
+# assign max score to treated units, min score to control units
+for (i in 1:length(s.upper$treat3)) {
+  if (is.na(s.upper$g1treadss[i]) & s.upper$treat3[i] == 0) {
+    s.upper$g1treadss[i] <- min(na.omit(s$g1treadss))
+  } else if (is.na(s.upper$g1treadss[i]) & s.upper$treat3[i] == 1) {
+    s.upper$g1treadss[i] <- max(na.omit(s$g1treadss))
+  }
+}
+
+ate.reading.upper <- lm(g1treadss ~ treat3 + factor(gkschid),data=s.upper)
+summary(ate.reading.upper)$coef[2,]
+
+```
+
+_Lower bound_: start by creating a new dataset with new treatment variable, filling in missing values for class types in first grade by assuming that they would have been the same as in kindergarten
+
+```{r}
+s.lower <- s
+s.lower$treat3 <- ifelse(is.na(s.upper$treat2), s.upper$treat, s.upper$treat2)
+
+# assign min score to treated units, max score to control units
+for (i in 1:length(s.lower$treat3)) {
+ if (is.na(s.lower$g1treadss[i]) & s.lower$treat3[i] == 0) {
+   7
+   s.lower$g1treadss[i] <- max(na.omit(s$g1treadss))
+ } else if (is.na(s.lower$g1treadss[i]) & s.lower$treat3[i] == 1) {
+   s.lower$g1treadss[i] <- min(na.omit(s$g1treadss))
+ }
+}
+
+ate.reading.lower <- lm(g1treadss ~ treat3 + factor(gkschid),data=s.lower)
+summary(ate.reading.lower)$coef[2,]
+
+```
+This gives bounds of [−86.4, 103.0] for the reading scores. These intervals contain the ATE estimated in part (e) and are very wide, encompassing negative treatment effects. This suggests that attrition could threaten the validity of the ATEs calculated in part (e). Nonetheless it is worth remembering that these intervals represent extreme scenarios. In reality, attrition is unlikely to be as extreme as this.
+
+*h) [Challenging Question] Briefly, explain (using words only) why the two sets of standard errors obtained in part (c) differ depending on whether school is controlled for*
+Randomisation was carried out within each school rather than across schools, so this is akin to a case of block randomisation. As we would expect, schools are very predictive of the outcomes (some schools are better than others), so controlling for school leads to an increase in the precision of the estimated ATEs (i.e., lower standard errors).
