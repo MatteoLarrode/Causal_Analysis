@@ -14,27 +14,32 @@ library(randomizr)
 load("data/practical4_data.Rda")
 ```
 
-a) Using a simple regression, calculate the ATE and its p-value from the experiment, ignoring blocking (suppose we didn’t realise this was a block-randomised experiment). Store the ATE as an object
+**a) Using a simple regression, calculate the ATE and its p-value from the experiment, ignoring blocking (suppose we didn’t realise this was a block-randomised experiment). Store the ATE as an object**
 
 ```{r}
 summary(lm(Y ~ Z, data = a))
 ate <- summary(lm(Y ~ Z, data = a))$coef[2]
 ```
-b) Calculate the number of possible unique treatment vectors that can arise in this experiment, which has 7 treatment units and 7 control units.
+The ATE is -6.43 with a p-value of 0.052
 
-_Code Hint: Use the formula for combinations with replacement in the lecture slides, together with R’s factorial() command_
+**b) Calculate the number of possible unique treatment vectors that can arise in this experiment, which has 7 treatment units and 7 control units.**
+
+*Code Hint: Use the formula for combinations with replacement in the lecture slides, together with R’s factorial() command*
 
 ```{r}
 combinations <- factorial(14)/(factorial(7)*factorial(14-7))
 ```
+There are 3,432 possible unique treatment vectors
 
-c) Using the following code, create a matrix of all possible permutations of treatment assignment, ignoring the blocking (it may take 1-2 minutes to run). Verify that it gives you the correct number, as calculated in (b).
-
+**c) Using the following code, create a matrix of all possible permutations of treatment assignment, ignoring the blocking (it may take 1-2 minutes to run). Verify that it gives you the correct number, as calculated in (b).**
 ```{r}
 perms <- unique(replicate(50000,complete_ra(14)),MARGIN=2)
-```
 
-d) Now, create the null distribution of ATEs using the permutations matrix:
+dim(perms)
+```
+There should be 3,432 permutations of the treatment vector
+
+**d) Now, create the null distribution of ATEs using the permutations matrix:**
 
 i) Create an empty vector called “ates” using ates <- c().
 ```{r}
@@ -43,32 +48,91 @@ ates <- c()
 
 ii) Using a for() loop, fill in this vector with the ATE under each possible permutation of treatment
 ```{r}
+# My first version
 col_outcome <- a$Y
 perms_df <- as.data.frame(perms)
 
-calc_ate <- function(treatment, outcome){
+calc_ate <- function(treatment, outcome) {
   new_df <- tibble(treatment, outcome)
   ate <- summary(lm(outcome ~ treatment, data = new_df))$coef[2]
-  
+
   return(ate)
 }
 
 
-for(i in colnames(as.data.frame(perms))){
+for (i in colnames(as.data.frame(perms))) {
   ates[i] <- calc_ate(perms_df[[i]], col_outcome)
 }
+
+# Solution version
+for (i in 1:ncol(perms)) {
+  ates[i] <- mean(a$Y[perms[, i] == 1]) - mean(a$Y[perms[, i] == 0])
+}
 ```
+Here, we took the Y vector, which under the sharp null contains all of the potential outcomes under treatment and control: the observed outcomes are the full set of potential outcomes, because it doesn’t matter whether someone is assigned to treatment or control. 
 
-e) Calculate the exact two-tailed p-value using 
-- the estimated ATE from (a)
-- the null distribution from (d), 
+We then used Y to calculate the ATE under every possible randomisation, telling us the null distribution of possible ATEs. This allows us to ask: under the null, how likely is our ATE to arise by chance alone, merely due to the quirks of randomisation?
 
-and give a precise interpetation of it. Is it higher or lower than the p-value calculated the traditional way in (a)?
 
-_Hint: You need to calculate the proportion of the null distribution that is at least as extreme as the estimated ATE. It can help to start with a drawing_
+**e) Calculate the exact two-tailed p-value using: the estimated ATE from (a) and the null distribution from (d). Give a precise interpetation of it. Is it higher or lower than the p-value calculated the traditional way in (a)?**
+
+*Hint: Calculate the proportion of the null distribution that is at least as extreme as the estimated ATE.*
 
 ```{r}
-
-
+(length(ates[ates<=ate]) + length(ates[ates>=-ate])) / ncol(perms)
 ```
+The exact p-value is 0.061. It implies that if the strict null hypothesis were true, we’d observe an ATE at least as large as our actual ATE 6.1% of the time across all possible randomisations usinf a two-tailed test. The p-value is higher than in (a), which is very common when conducting randomisation inference.
 
+**f) To visualise what is happening, plot the null distribution as a density or histogram, adding vertical lines for the estimated ATE and critical values for the exact two-tailed hypothesis test with a significance level of 5%**
+
+```{r}
+plot(density(ates),
+       xlab="Average Treatment Effects",
+       main="Distribution of ATEs Under the\n Sharp Null Hypothesis")
+abline(v=ate,col="red",lwd=2)
+abline(v=quantile(ates,0.025),col="blue",lty=2)
+abline(v=quantile(ates,0.975),col="blue",lty=2)
+legend("topright",c("ATE","Critical\n Values"),lty=c(1,2),col=c("red","blue"),ncol=1)
+```
+**g) Finally, let’s re-estimate everything, this time accounting for the blocking. First, calculate the ATE and its p-value from the experiment, accounting for the blocking. Is it different to (a)?
+
+```{r}
+reg2 <- lm(Y~Z + factor(block),data=a)
+
+summary(reg2)
+ate2 <- reg2$coef[2]
+```
+The ATE is unchanged but the p-value has fallen a lot compared to (a), to 0.0014 as we would expect: blocking allows us to estimate the same ATE with much greater precision
+
+**Using the following code2, create a new matrix of all possible permutations of treatment assignments with the blocking (again it may take 1-2 minutes to run).**
+
+_The difference to part (c) is that we include the actual block assignments within the code block ra, which creates block randomisations instead of the standard randomisations from (c)_
+
+```{r}
+perms2 <- unique(replicate(20000,block_ra(a$block)),MARGIN=2)
+
+dim(perms2)
+```
+There are now 1400 possible permutations compared to the 3432 in (b). This shows how blocking reduces the number of possible randomisations.
+
+**i) Repeat (d) to (f), this time using the permutations matrix from question (h). Comment on how the null distribution has changed, compared to (f)**
+
+```{r}
+ates2 <- c()
+
+for (i in 1:ncol(perms2)) {
+  ates2[i] <- mean(a$Y[perms2[, i] == 1]) - mean(a$Y[perms2[, i] == 0])
+}
+
+(length(ates2[ates2 <= ate2]) + length(ates2[ates2 >= -ate2])) / ncol(perms2)
+
+plot(density(ates2),
+  xlab = "Average Treatment Effects",
+  main = "Distribution of ATEs Under the\n Sharp Null Hypothesis"
+)
+abline(v = ate2, col = "red", lwd = 2)
+abline(v = quantile(ates2, 0.025), col = "blue", lty = 2)
+abline(v = quantile(ates2, 0.975), col = "blue", lty = 2)
+legend("topright", c("ATE", "Critical\n Values"), lty = c(1, 2), col = c("red", "blue"), ncol = 1)
+```
+The null distribution is much narrower, with fewer extreme values compared to (f). Remem- ber that blocking is useful because it rules out ‘crazy’ randomisations that result in extreme ATEs. This exercise demonstrates it directly.
