@@ -20,13 +20,13 @@ This dataset includes the potential outcome under control (y0) and the potential
 
 *This is a purely hypothetical scenario: In reality, we never observe potential outcomes under both treatment and control for the same units: we only observe one of them*
 
-a) Find the *true Average Treatment Effect* for all units, using y0 and y1
+**a) Find the *true Average Treatment Effect* for all units, using y0 and y1**
 
 ```{r}
 mean(a$y1-a$y0)
 ```
 
-b) Now, we’ll randomly assign half of the units to treatment and half to control by creating a new variable indicating treatment status. 
+**b) Now, we’ll randomly assign half of the units to treatment and half to control by creating a new variable indicating treatment status.**
 
 ```{r}
 set.seed(1) 
@@ -36,17 +36,17 @@ a <- a[order(a$rand),]
 a$tr <- c(rep(1,50),rep(0,50))
 ```
 
-c) Conduct a test to assess whether the treatment and control groups have the same average potential outcomes under control (y0). Has randomisation succeeded in creating treatment and control groups with equivalent potential outcomes under control?
+**c) Conduct a test to assess whether the treatment and control groups have the same average potential outcomes under control (y0). Has randomisation succeeded in creating treatment and control groups with equivalent potential outcomes under control?**
 
 ```{r}
 t.test(a$y0[a$tr==1], a$y0[a$tr==0])
 ```
 There is a small, but not statistically significant, difference in potential outcomes under control of 2.26 between the two groups (the p-value is 0.11). Thus, as expected, we cannot reject the null hypothesis that the potential outcomes under control are equal.
 
-_Why isn't the difference precisely equal to zero?_: randomisation isn’t guaranteed to completely equalise potential outcomes in any one instance. Instead, it does so in expectation over many repeated randomisations, as we show below.
+*Why isn't the difference precisely equal to zero?*: randomisation isn’t guaranteed to completely equalise potential outcomes in any one instance. Instead, it does so in expectation over many repeated randomisations, as we show below.
 
 
-d) Find the *Average Treatment Effect from the experiment*. How similar is it to the true Average Treatment Effect?
+**d) Find the *Average Treatment Effect from the experiment*. How similar is it to the true Average Treatment Effect?**
 ```{r}
  mean(a$y1[a$tr==1]) - mean(a$y0[a$tr==0])
 ```
@@ -70,7 +70,7 @@ The mean ATE is now extremely close to the true ATE. This shows that randomised 
 
 In any one instance, the estimate will not be exactly the same, but the estimator is unbiased because it recovers the true ATE in expectation, if we kept randomising over and over again.
 
-f) Finally, repeat (e), calculating the mean difference in potential outcomes under control (y0) between the treatment and control groups instead of the ATE. What is the mean difference from your 10,000 experiments?
+**f) Finally, repeat (e), calculating the mean difference in potential outcomes under control (y0) between the treatment and control groups instead of the ATE. What is the mean difference from your 10,000 experiments?**
 
 ```{r}
 experiment.sim2 <- function(a){
@@ -102,7 +102,7 @@ load("data/gerber.Rda")
 
 The first treatment, “civic duty”, involved sending a letter to the voter carrying the message “DO YOUR CIVIC DUTY - VOTE!”. The second treatment, “Neighbors” sent the same letter, but also informed the voter that who votes is public information (which is the case by law in the USA). It listed the recent voting record of each registered voter in the household and the voting records of those living nearby, and stated that a follow-up letter after the election would report back to the household and to their neighbours on who had voted and who had not. The idea was to see whether priming extrinsic motivations would encourage this treatment group to turn out more than the control group, who received no letter.
 
-a)  For both treatments, calculate the average treatment effect and test whether it is statistically significant.
+**a)  For both treatments, calculate the average treatment effect and test whether it is statistically significant.**
 
 ```{r}
 t.test(g$voting[g$civicduty==1], g$voting[g$control==1])
@@ -110,7 +110,7 @@ t.test(g$voting[g$neighbors==1], g$voting[g$control==1])
 ```
 The ATE for the civic duty treatment is 0.018 and the ATE for the neighbors treatment is 0.081. They have t-statistics of 6.9 and 30.2 respectively, meaning that they are both statistically significant at all conventional significance levels. Because the outcome variable is binary, the ATEs just tell us the differences in the probability that someone voted. Thus, the probability that someone voted in the “civic duty” group was 1.8 percentage points higher than the control group and the probability that someone voted in the “neighbors” group was 8.1 percentage points higher than the control group. The results support the idea that people have both intrinsic motivations to vote (since “civic duty” led to higher voting) and even stronger extrinsic motivations to vote (since public shaming led to even higher voting).
 
-b) For both treatment groups, compare the mean values of yob, sex and p2004 to the control group. Do the results suggest that randomisation was successful? Is selection bias likely to be a problem in this experiment?
+**b) For both treatment groups, compare the mean values of yob, sex and p2004 to the control group. Do the results suggest that randomisation was successful? Is selection bias likely to be a problem in this experiment?**
 
 ```{r}
   t.test(g$sex[g$civicduty==1],g$sex[g$control==1])
@@ -131,7 +131,7 @@ Under true randomisation the control group should provide a valid counterfactual
 
 3.  Just because we found no difference in terms of observed variables, there could still be selection bias from unobserved variables. Nonetheless, such a case is unlikely when randomisation was successful.
 
-*Calculate the ATE for the the neighbors treatment using:*
+**Calculate the ATE for the the neighbors treatment using:**
 
 - A regression containing only neighbors
 ```{r}
