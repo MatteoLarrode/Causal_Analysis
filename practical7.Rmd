@@ -1,0 +1,61 @@
+---
+title: "Practical 7"
+author: "Matteo Larrode"
+date: "2023-11-23"
+output: html_document
+---
+
+# Week 7: Instrumental Variables and Natural Experiments in Practice
+
+Leah Stokes (2016) asks whether governments are punished electorally for building wind farms, a policy that mitigates climate change but may impose costs on the communities where turbines are sited. The Ontario government built turbines in places where they would generate the most electricity: in places with higher prevailing wind speeds. In general certain broad areas are better-suited for turbines (rural and elevated places, and areas closer to the windy great lakes). Stokes argues that within these areas wind speed varies at random at the local level. Local areas with high wind speeds should not be more supportive of the government than local areas with low wind speeds.
+
+This is therefore a natural experiment where wind speed is an instrument that randomly en- couraged the government to site turbines in particular places. Her outcome of interest is change in support for the incumbent government from 2007 (before the wind farm policy) to 2011 (after it began) at a highly localised level known as “precincts” in Canada, which typically contain around 300 voters.
+
+```{r setup}
+library(tidyverse)
+load("data/Stokes.Rda")
+```
+
+**a) Assess whether wind speed can be considered to be as-if randomly assigned geographically, by regressing prevailing wind speed in the precinct on all of the geographical covariates. What do you conclude?**
+
+```{r}
+model1 <- lm(
+  avg_pwr_log ~ longitude + latitude + factor(ed_id) + mindistlake + mindistlake_sq,
+  data = s
+)
+
+summary(model1)
+```
+Statistical significance -> imbalances
+Scale of coefficients are hard to interpret.
+
+
+**b) Estimate the first-stage relationship between the treatment (whether or not a wind turbine was built or proposed within 3km) and prevailing wind speed in the precinct using a regression with no added covariates.**
+
+```{r}
+model2 <- lm(
+  prop_3km ~ avg_pwr_log,
+  data = s
+)
+
+summary(model2)
+```
+The first stage tells us how strongly the instrument affects the treatment. The higher is the coefficient, the more strongly the instrument encourages units to take higher values of the treatment, or in this case wind power "encourages" wind turbines to be built. 
+
+**c) Stokes actually estimates the first and second stages with a full set of geographic controls included. Why do you think she does this?**
+
+Controlling for geographic variables allows to focus on very specific areas. While it makes sense that wind speed is NOT randomly distributed in broad areas, there is reason to believe that it is not the case in local areas. 
+
+
+**d) Estimate the first-stage relationship between prop 3km and avg pwr log using a regression, this time with a full set of geographic controls. Interpret the result, and explain why it does or does not differ from part (b)**
+
+```{r}
+model3 <- lm(
+  prop_3km ~ avg_pwr_log + longitude + latitude + factor(ed_id) + mindistlake + mindistlake_sq,
+  data = s
+)
+
+summary(model3)
+```
+
+
