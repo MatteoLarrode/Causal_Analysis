@@ -1,0 +1,16 @@
+---
+title: "Practical 6"
+author: "Matteo Larrode"
+date: "2023-12-13"
+output: html_document
+---
+
+# Week 6: Compliance, Instrumental Variables and Natural Experiments
+
+
+
+```{r setup}
+knitr::opts_chunk$set(output = FALSE)
+
+```
+
