@@ -7,10 +7,63 @@ output: html_document
 
 # Week 6: Compliance, Instrumental Variables and Natural Experiments
 
+### Question 1
+In China, limited democracy exists in some local elections for low-level party officials, but people are often coerced into participation by their state-run employers. However, in some places voters are given more autonomy. One example is Peking University in Beijing, where students are generally free to choose whether or not to vote. 
+
+In a paper from 2006, Mei Guan and Donald Green investigate whether the sorts of ‘nudges’ that increase electoral turnout in democratic countries, such as canvassing from candidates and their supporters, will cause higher turnout in this setting. They tested this by randomly assigning some of a sample of Peking University students to receive a canvassing visit at their dorm room, with the others randomly assigned to receive no visit. This random assignment is an instrument, because not all of the students were successfully contacted. The treatment is whether or not the student was actually contacted. They then measured whether each student subsequently voted: the outcome. Here we’ll investigate compliance and treatment effects. 
 
 
 ```{r setup}
 knitr::opts_chunk$set(output = FALSE)
 
+library(tidyverse)
+
+load("data/guangreen.Rda")
 ```
 
+**a) Calculate (i) the number of students who were assigned to control but received the treatment and (ii) the number of students who were assigned to treatment but received the control. Using these answers, what type of non-compliance occurred in this experiment?**
+
+```{r}
+print("Students assigned to control but received treatment:")
+length(g$contact[g$contact==1&g$assignment==0])
+
+print("Students assigned to treatment but didn't received treatment:")
+length(g$contact[g$contact==0&g$assignment==1])
+```
+No students who were assigned to the control were contacted (treated), but 307 students who were assigned to the treatment were not contacted (i.e., received the control). Therefore this is a case of one-sided non-compliance.
+
+**b) In this experiment, what type of student is a complier?**
+A complier is a student who always gets contacted when assigned to the treatment group and always does not get contacted when assigned to the control group
+
+**c) Calculate the proportion of compliers**
+
+```{r}
+prop.c <- sum(g$contact)/sum(g$assignment)
+
+prop.c
+```
+
+Amongst the group that were randomly assigned to treatment, we know that all those who actually received treatment must be compliers. But amongst the group assigned to control, we do not know which units are compliers and which are never-takers, because we do not also observe them in the treatment condition.
+
+The proportion of compliers is 0.886 (i.e., 88.6% of students are compliers)
+
+**d) Calculate the intent-to-treat effect, and interpret what it means here**
+
+```{r}
+itt <- mean(g$turnout[g$assignment==1]) - mean(g$turnout[g$assignment==0])
+
+itt
+```
+
+The intent-to-treat effect is the causal effect of being assigned to treatment versus being assigned to control. The intent-to-treat effect is 0.132. This means that on average, attempting to contact a student led to a 13.2 percentage point increase in their probability of voting.
+
+**e) Calculate the complier average causal effect, and interpret what it means here**
+
+```{r}
+cace <- itt/prop.c
+
+cace
+```
+The complier average causal effect is 0.149. This means that on average amongst the compliers, being contacted led to a 14.9 percentage point increase in the probability of voting
+
+### Question 2
