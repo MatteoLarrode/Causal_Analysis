@@ -16,8 +16,6 @@ In a paper from 2006, Mei Guan and Donald Green investigate whether the sorts of
 ```{r setup}
 knitr::opts_chunk$set(output = FALSE)
 
-library(tidyverse)
-
 load("data/guangreen.Rda")
 ```
 
@@ -67,3 +65,71 @@ cace
 The complier average causal effect is 0.149. This means that on average amongst the compliers, being contacted led to a 14.9 percentage point increase in the probability of voting
 
 ### Question 2
+
+In the example discussed at the end of this week’s lecture, Clingingsmith, Khwaja and Kremer (2009) examined the impact of the Hajj pilgrimage on the subsequent beliefs and values of Pakistani Muslims. They used a natural experiment: the random assignment of eligibility for a visa by lottery, where the lottery was designed to limit overcrowding by pilgrims.
+
+```{r message=FALSE, warning=FALSE}
+library(AER)
+
+load("data/hajjdata.Rda")
+```
+
+**a) Calculate (i) the proportion of people who won the lottery and did not go on the Hajj and (ii) the proportion of people who lost the lottery and went on the Hajj. Using these answers, what type of non-compliance occurred in this natural experiment?**
+
+```{r}
+print("Proportion of people who won the lottery and did not go on the Hajj: ")
+length(h$hajj2006[h$success == 1 & h$hajj2006 == 0])/length(h$hajj2006[h$success == 1])
+
+print("Proportion of people who lost the lottery and went on the Hajj: ")
+length(h$hajj2006[h$success == 0 & h$hajj2006 == 1])/length(h$hajj2006[h$success == 0])
+```
+13.7% of lottery losers went on the Hajj, while just 0.82% of lottery winners did not go. Therefore technically this is two-sided non-compliance, although non-compliance was very rare amongst those assigned to treatment: only a tiny proportion of lottery winners failed to go on the pilgrimage, but a more substantial proportion of lottery losers still went.
+
+**b) In this study, who are the compliers and who are the always-takers?**
+The compliers are people who always go on the Hajj when they win the visa lottery and always don’t go on the Hajj when they lose it. The always-takers are people who always go on the Hajj regardless of their lottery outcome.
+
+**c) Using a similar approach to Question 1, calculate the intent-to-treat effect, proportion of compliers and complier average causal effect, using moderacy as the outcome variable. Interpret the meaning of all three quantities in this natural experiment.**
+
+```{r}
+itt2 <- mean(h$moderacy[h$success == 1]) - mean(h$moderacy[h$success == 0])
+itt2
+
+prop.c2 <-
+  # Prop. of Compliers and Always Takers
+  sum(h$hajj2006[h$success==1])/length(h$hajj2006[h$success==1]) - 
+  # Prop. of Always Takers
+  sum(h$hajj2006[h$success==0])/length(h$hajj2006[h$success==0])
+prop.c2
+
+cace2 <- itt2 / prop.c2
+cace2
+```
+The intent-to-treat effect is 0.107, meaning that winning the visa lottery caused a 0.107- point increase in moderacy along the four-point scale. The proportion of compliers is 0.854, meaning that 85.4% of people in this study are compliers. The CACE is 0.125, meaning that amongst the compliers, going on the Hajj causes an increase in moderacy of 0.125 points along the four-point scale.
+
+**d) Now calculate the proportion of compliers using the first stage of two-stage least squares. Verify that it is identical to the proportion you estimated in part (c).**
+
+In the first stage, we regress the treatment variable on the instrument and extract predicted treatment values. The first stage tells us how strongly the instrument affects the treatment. The higher is β , the more strongly the instrument encourages people to take higher values of the
+treatment.
+
+```{r}
+s1 <- lm(data = h, hajj2006 ~ success)
+summary(s1)
+
+```
+**e) Calculate the complier average causal effect using two-stage least squares and verify that your answer is identical to part (c). Report its standard error. Is the CACE statistically significant?**
+
+In the second stage, we regress the outcome variable on the predicted treatment values from the first stage.
+
+```{r}
+s2 <- ivreg(data = h, moderacy ~ hajj2006 | success)
+summary(s2)
+```
+As expected, the result is identical to (c). The standard error is 0.04, giving a t-statistic of 3.08, which means that the CACE is statistically significant at the 1% significance level.
+
+**f)  Add the covariates age, literate and urban to your model from (d). Does the estimated CACE change much? Why or why not?**
+
+```{r message=FALSE}
+s2new <- ivreg(data = h, moderacy ~ hajj2006 + age + literate + urban | success)
+summary(s2new)
+```
+The estimated CACE barely changes. This is not surprising, given that the instrument is randomly assigned. Variables like age and place of residence are correlated with the outcome, but not with the instrument, so they are not confounders here.
