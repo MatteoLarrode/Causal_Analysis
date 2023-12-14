@@ -2,7 +2,9 @@
 title: "Practical 7"
 author: "Matteo Larrode"
 date: "2023-11-23"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Week 7: Instrumental Variables and Natural Experiments in Practice
@@ -12,7 +14,6 @@ Leah Stokes (2016) asks whether governments are punished electorally for buildin
 This is therefore a natural experiment where wind speed is an instrument that randomly en- couraged the government to site turbines in particular places. Her outcome of interest is change in support for the incumbent government from 2007 (before the wind farm policy) to 2011 (after it began) at a highly localised level known as “precincts” in Canada, which typically contain around 300 voters.
 
 ```{r setup}
-library(tidyverse)
 load("data/Stokes.Rda")
 ```
 
@@ -26,9 +27,7 @@ model1 <- lm(
 
 summary(model1)
 ```
-Statistical significance -> imbalances
-Scale of coefficients are hard to interpret.
-
+There is a lot of imbalance in terms of geographical covariates. There are statistically significant relationships between avg pwr log and longitude, mindistlake, mindistlak sq as well as many of the districts. Distance to the Great Lakes is negatively related to wind speed (areas closer to the Lakes are windier) and longitude is positively related to wind speed (more westerly areas are windier). This is not particularly surprising. It is bound to be the case that different areas of Ontario are naturally windier than others.
 
 **b) Estimate the first-stage relationship between the treatment (whether or not a wind turbine was built or proposed within 3km) and prevailing wind speed in the precinct using a regression with no added covariates.**
 
@@ -40,12 +39,15 @@ model2 <- lm(
 
 summary(model2)
 ```
-The first stage tells us how strongly the instrument affects the treatment. The higher is the coefficient, the more strongly the instrument encourages units to take higher values of the treatment, or in this case wind power "encourages" wind turbines to be built. 
+There appears to be a fairly strong relationship between the instrument and the treatment.
+A 1% increase in wind speed is estimated to lead to a 0.01-point increase in the probability
+of a turbine being proposed, an effect which is highly significant at all conventional levels.
+
+*Note: It’s important to note that the dependent variable is binary and the independent variable is logged. Remember that when an independent variable in a regression is logged and its coefficient is β, a 1% increase in the variable leads to a change of β/100 in the dependent variable*
 
 **c) Stokes actually estimates the first and second stages with a full set of geographic controls included. Why do you think she does this?**
 
-Controlling for geographic variables allows to focus on very specific areas. While it makes sense that wind speed is NOT randomly distributed in broad areas, there is reason to believe that it is not the case in local areas. 
-
+Instrumental variables analysis relies on different values of the instrument being randomly assigned based on potential outcomes. Our answer to (a) suggested that this assumption may be violated, since more westerly areas and places closer to the great lakes are windier. Those places may have different potential outcomes than others. Perhaps, for example, communi- ties nearer the Great Lakes are more rural, and therefore more conservative and naturally more opposed to a left-of-centre government. However, within the smaller geographic areas defined by district, latitude, longitude and proximity to the Great Lakes, it is very likely that windspeed is randomly assigned. Thus she controls for the geographic covariates because it ensures that the randomisation assumptions is more likely to hold.
 
 **d) Estimate the first-stage relationship between prop 3km and avg pwr log using a regression, this time with a full set of geographic controls. Interpret the result, and explain why it does or does not differ from part (b)**
 
@@ -58,4 +60,71 @@ model3 <- lm(
 summary(model3)
 ```
 
+The relationship remains strong, with a 1% increase in wind speed estimated to lead to a 0.0076-point increase in the probability of a turbine being proposed. This is slightly weaker than the first-stage effect estimated without controls, because controlling for the geographic covariates means that we are focusing only on variation in wind speed within small geographic areas. Some of the estimated effect of wind speed on turbine construction in (b) merely reflected the fact that high-wind areas may also be more suitable for wind-farm construction, such as being more rural, etc.
 
+**e) Conduct an F test for the strength of the avg_pwr_log instrument. Using this test and your answer to (d), do you think that the instrument can be considered to be relevant?**
+
+```{r}
+library(lmtest)
+
+mod1 <- lm(
+  prop_3km ~ longitude + latitude + mindistlake + mindistlake_sq + factor(ed_id), 
+  data=s)
+
+mod2 <- lm(
+  prop_3km ~ avg_pwr_log + longitude + latitude + mindistlake + mindistlake_sq + factor(ed_id), 
+  data=s
+)
+
+waldtest(mod2, mod1)
+```
+The F test produces an F-Statistic of 70.7. This is much larger than the benchmark value of 10 below which an instrument is considered to be unacceptably weak. The first-stage regression in (d) also showed a reasonably strong and statistically significant relationship between the treatment and the instrument. Together, these pieces of evidence suggest that the relevance assumption is clearly met here.
+
+**f)  Estimate the Local Average Treatment Effect of prop 3km on chng lib using two-stage least squares with avg pwr log as the instrument and the full set of geographic controls. Interpret the coefficient on prop 3km and its statistical significance precisely.**
+
+```{r}
+library(AER)
+
+summary(
+  ivreg(
+    chng_lib 
+    ~ prop_3km + mindistlake + mindistlake_sq + longitude + latitude + as.factor(ed_id) 
+    | avg_pwr_log + mindistlake + mindistlake_sq + longitude + latitude + as.factor(ed_id), 
+    data = s))
+
+```
+The estimated Local Average Treatment Effect of turbine construction on voting is that proposing to build a turbine in a precinct led to a 7.4 percentage-point fall in the incumbent party’s vote share in that precinct. The p-value for this effect is 0.0037, meaning that it is statistically significant at the 5% level.
+
+**g) Now find the same Local Average Treatment Effect of prop 3km on chng lib, but this time using two-stage least squares manually in two separate stages with covariates. Does your result differ from part (f)?**
+
+```{r}
+# First stage
+# In the first stage, we regress the treatment variable on the instrument and extract predicted treatment values
+first.stage <- lm(
+  prop_3km ~ avg_pwr_log + factor(ed_id) + longitude + latitude + mindistlake + mindistlake_sq,
+  data=s
+  )
+
+s$fitted.first <- fitted.values(first.stage)
+
+# Second stage
+# In the second stage, we regress the outcome variable on the predicted treatment values from the first stage
+
+second.stage <- lm(
+  chng_lib ~ fitted.first + factor(ed_id) + longitude + latitude + mindistlake + mindistlake_sq,
+  data=s
+)
+
+summary(second.stage)
+
+
+```
+The estimated coefficient is identical to (f), as we would expect. The standard error from doing 2SLS manually is slightly biased, however, as described in the lecture notes from last week and so as expected it is slightly different to the correct standard error estimated in (f).
+
+**h) Outline one way in which the randomisation assumption could be violated, here. How serious do you think this violation is likely to be for the internal validity of the results?**
+
+Randomisation could be violated by residential sorting based on wind speed. For instance, if people with different potential outcomes (perhaps people who are already predisposed to dislike the government) choose to live in windier areas, then the instrument would not be randomly assigned. However, this seems very unlikely to be a serious threat to internal validity. Because the paper focuses on very small geographic areas, it seems implausible that there would be systematic differences between people in low- or high-wind places within those areas (e.g., between people living on top of a hill and people living at the bottom).
+
+**i)  What does the ‘exclusion restriction’ mean in this study? Do you think it is likely to be violated?**
+
+The exclusion restriction means that the only way that local wind speed affects voting is through its impact on the probability of a turbine being built. This seems highly plausible. it is unlikely that living in a high-wind place would, on its own, turn people against the government.
