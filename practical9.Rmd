@@ -1,0 +1,180 @@
+---
+title: "Practical 9"
+author: "Matteo Larrode"
+date: "2024-01-8"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Week 9: Causal Inference over Time: Difference-in-Differences and Fixed Effects
+
+### Question 1: Difference-in-Differences
+
+This question uses data from Malesky, Nguyen and Tran’s (2014) study of the effect of centralising control of public services in Vietnam.1 Scholars have long speculated that de-centralised control of public services in developing countries can lead to corruption and ‘capture’ by local politicians who fail to use tax revenue to invest in public services. Centralisation of control may therefore lead to increased public investment. This is difficult to test because control of government spending rarely changes hands. But in 2009, Vietnam decided to experiment with re-centralising control of its public services in some areas but not others, placing them under central government control instead of control by local district authorities in around one-fifth of districts nationwide. The authors use a difference-in-differences framework to ask what impact this had on infrastructure spending, comparing changes in treated districts (where spending was re-centralised) to untreated districts (where it remained under local control). They have data on infrastructure spending before the change (in 2006 and 2008) and after the change (in 2010), for small areas called ‘communes’, which are subsets of districts.
+
+```{r setup}
+knitr::opts_chunk$set(include = FALSE)
+
+library(lmtest)
+library(multiwayvcov)
+load("data/malesky.Rda")
+```
+
+**a) Create a new dataset for the years 2008 and 2010 only. In this dataset, create: (i) a dummy variable called “time” equaling 1 if the year is 2010; (ii) a variable for the interaction between time and treatment**
+
+```{r}
+m3 <- m[m$year>2006,]
+m3$time <- ifelse(m3$year==2010,1,0)
+m3$time_treat <- m3$time*m3$treatment
+
+```
+
+**b) Use the dataset and variables you created in a) to calculate a difference-in-difference estimate of the causal effect of centralisation on infrastructure investment. Interpret the resulting coefficient and its statistical significance.**
+
+Remember the formula: Yi = μ + γGi + δTi + τGiTi. Where: Gi = 1 for the treatment group and 0 otherwise; Ti = 1 for the time period when treatment occurs and 0 otherwise
+
+```{r}
+summary(lm(infra ~ time + treatment + time_treat,data=m3))
+```
+The estimated treatment effect is 0.27 with a p-value of 0.005, meaning that it is statistically significant at the 1% level. It implies that the centralisation of control over spending led to an increase of 0.27 in infrastructure investment, measured on a scale from 0 to 6.
+
+**c) Repeat b), this time adding in a control for commune population. Why might it be sensible to include this control variable?**
+
+```{r}
+model1 <- lm(infra ~ time + treatment + time_treat + lnpopden,data=m3)
+
+summary(model1)
+```
+This gives a treatment effect of 0.25, slightly smaller than in (b). It is sensible to control for population because it is an obvious potential time-variable confounder. Infrastructure investment may increase in places experiencing rapid population growth. Controlling for it therefore helps make the parallel trends assumption more credible.
+
+**d) Because the program was rolled out at the district level, there may be serial correlation in the standard errors across districts. To account for this, estimate cluster-robust standard errors for the model you estimated in c). How different is the estimated p-value for the difference- in-differences causal effect?**
+
+```{r}
+coeftest(model1, cluster.vcov(model1,m3$district))
+```
+The p-value increases more than five-fold from approximately 0.01 in part (c) to 0.055. This is very common when adjusting for clustering.
+
+**e) Difference-in-differences estimation relies on the ‘parallel trends’ assumption. Explain what that assumption means in this study.**
+
+It means that in the absence of treatment, the treated and untreated communes would have experienced the same changes infrastructure investment so that untreated communes provide a counterfactual (over time) for treated communes. Specifically, it requires that there be no time-varying confounders.
+
+**f) Now, we’ll assess the parallel trends assumption graphically. Return to the full dataset and estimate means of the infra variable for 2006, 2008 and 2010 for both the treated and control groups (six means in total). Plot these means separately over time for the treated and control groups. Do you think that the parallel trends assumption is satisfied here?**
+
+```{r}
+# means, treated
+means.t <- c(
+  mean(m$infra[m$year==2006&m$treatment==1]),
+  mean(m$infra[m$year==2008&m$treatment==1]),
+  mean(m$infra[m$year==2010&m$treatment==1]))
+
+#means,control
+means.c <- c(
+  mean(m$infra[m$year==2006&m$treatment==0]),
+  mean(m$infra[m$year==2008&m$treatment==0]),
+  mean(m$infra[m$year==2010&m$treatment==0]))
+
+ # plot
+plot(means.t, 
+     ylim=c(2.6,3.6),
+     type="o",
+     pch=16,
+     col="red",
+     xaxt="n",
+     xlab="Year",
+     ylab="Infrastructure Index")
+lines(means.c,type="o",pch=15,col="blue")
+axis(1,at=c(1,2,3),lab=c(2006,2008,2010))
+legend("topleft",
+       c("Treated","Control"),
+       col=c("red","blue"),
+       pch=c(16,15),
+       lty=c(1,1))
+
+```
+Although not completely parallel, there is not much evidence of divergence between the treated and untreated groups prior to treatment. There is not much evidence for a violation of the parallel trends assumption.
+
+**g) Create a new dataset for the years 2006 and 2008 only, and use it to estimate a placebo difference-in-differences effect before the treatment occurred. What do you conclude about the parallel trends assumption?**
+
+```{r}
+m4 <- m[m$year<2010,]
+
+m4$time <- ifelse(m4$year==2008,1,0)
+m4$time_treat <- m4$time*m4$treatment
+
+summary(lm(infra ~ time + treatment + time_treat + lnpopden ,data=m4))
+
+```
+The placebo treatment effect is close to zero and no longer statistically significant (with clustering the standard error probably be even larger). That is, there is no evidence that changes in the treatment group were statistically different to changes in the control group in the periods before the treatment took place. This is reassurring: it provides more formal statistical evidence in favour of the parallel trends assumption.
+
+### Question 2: Fixed effects
+
+In this question, we’ll revisit Leah Stokes’ study of Canadian wind farms that we introduced in Week 7, on instrumental variables. Recall that she examines the impact of wind farms on support for the incumbent party. Wind farms were built in some districts but not others between 2007 and 2011. In her paper, she actually uses fixed effects estimation as well as instrumental variables. For the fixed effects part of her study, she has data on electoral districts for the years 2003, 2007 and 2011.
+
+```{r}
+library(fixest)
+load("data/Stokes_fe.Rda")
+```
+
+**a)**
+For this study:
+- the treatment is `op` (1 if a wind farm was operational in the district-year observation, 0 otherwise)
+- the outcome is `perc lib` (Percentage vote for the incumbent (liberal) party)
+- the group variable for fixed effects is `master id` (ID variable indicating district)
+
+**b) Using the framework of fixed effects estimation and the code provided in the slides/lecture notes, estimate a suitable model for the causal effect of wind farms on support for the in- cumbent party. Explain how you chose your model. Carefully interpret the resulting causal effect and its statistical significance**
+
+```{r}
+summary(
+  feols(
+    data=s,
+    perc_lib ~ 
+    op + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant | master_id + year,
+    cluster=~master_id
+    )
+  )
+
+```
+There is no good reason not to include all the time-varying controls, here, since they make the parallel trends assumption more plausible. The results suggest that a wind farm becoming operational in the district led to an 11.7 percentage-point drop in support for the incumbent party
+
+**c) What is the key assumption needed for valid estimation of this causal effect? In theory (without doing any estimation), how reasonable do you think this assumption is?**
+
+The key assumption needed is parallel trends between areas that did and did not receive wind farms. This ensures that the untreated areas provide a valid counterfactual for the treated areas. It is difficult to say how plausible this assumption is without more formal tests, but it is certainly helped by the inclusion of a large number of time-varying confounders that probably have a strong impact on voting, like median income.
+
+**d) Using a graphical approach, assess whether or not you think the assumption in c) is satisfied**
+
+```{r}
+# means, treated
+means.t <- c(
+  mean(s$perc_lib[s$year==2003&s$treat_o==1]),
+  mean(s$perc_lib[s$year==2007&s$treat_o==1]),
+  mean(s$perc_lib[s$year==2011&s$treat_o==1]))
+
+#means,control
+means.c <- c(
+  mean(s$perc_lib[s$year==2003&s$treat_o==0]),
+  mean(s$perc_lib[s$year==2007&s$treat_o==0]),
+  mean(s$perc_lib[s$year==2011&s$treat_o==0]))
+
+# plot
+plot(means.t,
+     ylim=c(0.2,0.6),
+     type="o",
+     pch=16,
+     col="red",
+     xaxt="n",
+     xlab="Year",
+     ylab="Incumbent Vote Share")
+lines(means.c,type="o",pch=15,col="blue")
+axis(1,at=c(1,2,3),lab=c(2003,2007,2011))
+legend("topright",
+       c("Treated","Control"),
+       col=c("red","blue"),
+       pch=c(16,15),
+       lty=c(1,1))
+
+
+
+```
+The treated and untreated districts have near-perfect parallel trends in the outcome variable before treatment. 
+Note that we used the treat_o variable, because treatment and control groups are defined for all periods of the data.

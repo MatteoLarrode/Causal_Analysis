@@ -12,7 +12,7 @@
 <meta name="author" content="Matteo Larrode" />
 
 
-<title>Practical 8</title>
+<title>Practical 9</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -349,159 +349,152 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Practical 8</h1>
+<h1 class="title toc-ignore">Practical 9</h1>
 <h4 class="author">Matteo Larrode</h4>
 <h4 class="date">2024-01-8</h4>
 
 </div>
 
 
-<div id="week-8-regression-discontinuity-designs" class="section level1">
-<h1>Week 8: Regression Discontinuity Designs</h1>
-<p>We analyze Erik Meyersson’s 2014 paper, “Islamic Rule and the
-Empowerment of the Poor and Pious.” He asks whether political control by
-Islamic religious political parties leads to a decrease in women’s
-rights, particularly female education rates. He looks at Turkey in 1994,
-where an Islamic party gained political control in many municipalities,
-and a number of the election results were very close. He uses a
-regression discontinuity analysis of Islamic control on the rate of
-secondary school completion by girls, focusing on the Local Average
-Treatment Effect in areas where Islamic parties barely won or lost their
-elections.</p>
+<div id="week-9-causal-inference-over-time-difference-in-differences-and-fixed-effects" class="section level1">
+<h1>Week 9: Causal Inference over Time: Difference-in-Differences and
+Fixed Effects</h1>
+<div id="question-1-difference-in-differences" class="section level3">
+<h3>Question 1: Difference-in-Differences</h3>
+<p>This question uses data from Malesky, Nguyen and Tran’s (2014) study
+of the effect of centralising control of public services in Vietnam.1
+Scholars have long speculated that de-centralised control of public
+services in developing countries can lead to corruption and ‘capture’ by
+local politicians who fail to use tax revenue to invest in public
+services. Centralisation of control may therefore lead to increased
+public investment. This is difficult to test because control of
+government spending rarely changes hands. But in 2009, Vietnam decided
+to experiment with re-centralising control of its public services in
+some areas but not others, placing them under central government control
+instead of control by local district authorities in around one-fifth of
+districts nationwide. The authors use a difference-in-differences
+framework to ask what impact this had on infrastructure spending,
+comparing changes in treated districts (where spending was
+re-centralised) to untreated districts (where it remained under local
+control). They have data on infrastructure spending before the change
+(in 2006 and 2008) and after the change (in 2010), for small areas
+called ‘communes’, which are subsets of districts.</p>
 <pre class="r"><code>knitr::opts_chunk$set(include = FALSE)
 
-library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.4     ✔ readr     2.1.4
-## ✔ forcats   1.0.0     ✔ stringr   1.5.1
-## ✔ ggplot2   3.4.3     ✔ tibble    3.2.1
-## ✔ lubridate 1.9.3     ✔ tidyr     1.3.0
-## ✔ purrr     1.0.2     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<pre class="r"><code>library(rdd)</code></pre>
-<pre><code>## Loading required package: sandwich
-## Loading required package: lmtest
-## Loading required package: zoo
+library(lmtest)</code></pre>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
 ## 
-## Attaching package: &#39;zoo&#39;
-## 
-## The following objects are masked from &#39;package:base&#39;:
-## 
-##     as.Date, as.Date.numeric
-## 
-## Loading required package: AER
-## Loading required package: car
-## Loading required package: carData
-## 
-## Attaching package: &#39;car&#39;
-## 
-## The following object is masked from &#39;package:dplyr&#39;:
-## 
-##     recode
-## 
-## The following object is masked from &#39;package:purrr&#39;:
-## 
-##     some
-## 
-## Loading required package: survival
-## Loading required package: Formula</code></pre>
-<pre class="r"><code>m &lt;- read_csv(&quot;data/islamic.csv&quot;)</code></pre>
-<pre><code>## New names:
-## Rows: 3204 Columns: 7
-## ── Column specification
-## ──────────────────────────────────────────────────────── Delimiter: &quot;,&quot; dbl
-## (7): ...1, iwm94, hischshr1520m, hischshr1520f, lpop1994, sexr, lareapre
-## ℹ Use `spec()` to retrieve the full column specification for this data. ℹ
-## Specify the column types or set `show_col_types = FALSE` to quiet this message.
-## • `` -&gt; `...1`</code></pre>
-<p><strong>a) Create a treatment variable, islamicwin, that indicates
-whether or not the Islamic party won the 1994 election.</strong></p>
-<p><strong>b) Calculate the difference in means in secondary school
-completion rates for women between regions where Islamic parties won and
-lost in 1994. Do you think this is a credible estimate of the causal
-effect of Islamic party control? Why or why not?</strong></p>
-<p>The answer is -0.0258. A naive interpretation of this would be that
-Islamic party control leads to lower female education rates. But this is
-not a very credible estimate of the causal effect, due to selection
-bias. The treated and untreated regions are likely to have very
-different potential outcomes. For example, it is likely that places that
-strongly support Islamic parties are less supportive of female education
-to begin with.</p>
-<p><strong>c) Now we’ll start regression discontinuity analysis. First,
-calculate the optimal bandwidth for testing female high school
-completion rates using the Imbens-Kalyanaram procedure. Explain what the
-bandwidth means in this case.</strong></p>
-<p>This gives a bandwidth of 0.240. It means the optimal bias-variance
-tradeoff is achieved in this RD analysis by only including regions where
-the vote share margin for the Islamic Party was in the interval [−0.24,
-0.24]</p>
-<p><strong>d) Use RD estimation to find the Local Average Treatment
-Effect of Islamic party control on women’s secondary school education at
-the threshold, using local linear regression estimated with the
-RDestimate function from the rdd package (it will automatically use the
-bandwidth calculated in part c). Interpret the LATE carefully in
-words.</strong></p>
-<p>This gives a LATE estimate of 0.0296 with a p value of 0.017,
-indicating that the effect is clearly significant at the 5% level. This
-implies that, for regions close to the cutoff, an election win by an
-Islamic party leads to an increase in the secondary school completion
-rate for girls of 2.96 percentage points.</p>
-<p><strong>e) Perform placebo tests to check that the relationship
-between the running variable and outcome is not fundamentally
-discontinuous, by estimating RD estimates at placebo cutoffs of -0.1,
--0.05, 0.05 and 0.1. What do you conclude?</strong></p>
-<p>At -0.05 and 0.05 there is no evidence of a discontinuous
-relationship (the p-values are very high, indiciating no evidence of an
-RD “effect” at those placebo cutoffs). However, at -0.1 there is strong
-evidence of a discontinuity, and at 0.1 there is some evidence (a
-statistically significant effect exists at the 10% level). This
-constitutes evidence against a true RD effect because it indicates that
-the discontinuity we measured at 0 could be only one of many
-discontinuities in the data. In other words, the effect at 0 could have
-arisen due to chance alone.</p>
-<p><strong>f) Perform a robustness check for local randomisation at the
-threshold by estimating RD estimates in the same way as (g) for the
-three background covariates sexr, lop1994 and lareapre. What do you
-conclude?</strong></p>
-<p>There is no evidence of discontinuities for these any of these
-variables. They all have small placebo LATE estimates and high p-values.
-This suggests that, at least based on these observed covariates, there
-was no sorting around the threshold: local randomisation is likely to
-hold.</p>
-<p><strong>g) Perform a McCrary test: another way to check for sorting
-at the theshold. Plot and interpret the results.</strong></p>
-<p>The p-value for the resultant test statistic is 0.515, meaning that
-we cannot reject the null hypothesis of no discontinuous jump in the
-density of the running variable. Visually, you can also see that there
-is no strong evidence for this in the plot.</p>
-<p><strong>h) Examine the sensitivity of the main RD result to the
-choice of bandwidth by calculating and plotting RD estimates and their
-associated 95% confidence intervals for a range of bandwidths from 0.05
-to 0.6. To what extent do the results depend on the choice of
-bandwidth?</strong></p>
-<p>The plot shows a fairly typical pattern in RD analysis. At very low
-bandwidths, very little data is used in estimation, making the variance
-very high. Unsurprisingly therefore, the confidence interval is very
-wide at low bandwidths: recall that the optimal IK bandwidth is chosen
-with the twin goals in mind of reducing bias and variance. As the
-threshold (and therefore the effective sample size) increases, the
-confidence interval decreases.</p>
-<p>The size of the RD estimate does not change much as the bandwidth
-increases, which is reassuring. We would not want our result to be
-extremely sensitive to the bandwidth choice. Its statistical
-significance does change somewhat as the threshold changes. It is
-significant at the 95% level for bandwidths between approximately 0.15
-and 0.55, becoming statistically indistinguishable from 0 again at
-higher bandwidths. Again, this is reassuring, because the main result
-holds across a wide range of bandwidths, and it would not be very
-defensible in the first place to do RD estimation with a bandwidth as
-high as 0.55, where we are using data that is very far indeed from the
-cutoff. Overall, if you saw this plot in a published paper you should
-feel reassurred that the author’s results are not driven primarily by
-the choice of threshold.</p>
+##     as.Date, as.Date.numeric</code></pre>
+<pre class="r"><code>library(multiwayvcov)
+load(&quot;data/malesky.Rda&quot;)</code></pre>
+<p><strong>a) Create a new dataset for the years 2008 and 2010 only. In
+this dataset, create: (i) a dummy variable called “time” equaling 1 if
+the year is 2010; (ii) a variable for the interaction between time and
+treatment</strong></p>
+<p><strong>b) Use the dataset and variables you created in a) to
+calculate a difference-in-difference estimate of the causal effect of
+centralisation on infrastructure investment. Interpret the resulting
+coefficient and its statistical significance.</strong></p>
+<p>Remember the formula: Yi = μ + γGi + δTi + τGiTi. Where: Gi = 1 for
+the treatment group and 0 otherwise; Ti = 1 for the time period when
+treatment occurs and 0 otherwise</p>
+<p>The estimated treatment effect is 0.27 with a p-value of 0.005,
+meaning that it is statistically significant at the 1% level. It implies
+that the centralisation of control over spending led to an increase of
+0.27 in infrastructure investment, measured on a scale from 0 to 6.</p>
+<p><strong>c) Repeat b), this time adding in a control for commune
+population. Why might it be sensible to include this control
+variable?</strong></p>
+<p>This gives a treatment effect of 0.25, slightly smaller than in (b).
+It is sensible to control for population because it is an obvious
+potential time-variable confounder. Infrastructure investment may
+increase in places experiencing rapid population growth. Controlling for
+it therefore helps make the parallel trends assumption more
+credible.</p>
+<p><strong>d) Because the program was rolled out at the district level,
+there may be serial correlation in the standard errors across districts.
+To account for this, estimate cluster-robust standard errors for the
+model you estimated in c). How different is the estimated p-value for
+the difference- in-differences causal effect?</strong></p>
+<p>The p-value increases more than five-fold from approximately 0.01 in
+part (c) to 0.055. This is very common when adjusting for
+clustering.</p>
+<p><strong>e) Difference-in-differences estimation relies on the
+‘parallel trends’ assumption. Explain what that assumption means in this
+study.</strong></p>
+<p>It means that in the absence of treatment, the treated and untreated
+communes would have experienced the same changes infrastructure
+investment so that untreated communes provide a counterfactual (over
+time) for treated communes. Specifically, it requires that there be no
+time-varying confounders.</p>
+<p><strong>f) Now, we’ll assess the parallel trends assumption
+graphically. Return to the full dataset and estimate means of the infra
+variable for 2006, 2008 and 2010 for both the treated and control groups
+(six means in total). Plot these means separately over time for the
+treated and control groups. Do you think that the parallel trends
+assumption is satisfied here?</strong></p>
+<p>Although not completely parallel, there is not much evidence of
+divergence between the treated and untreated groups prior to treatment.
+There is not much evidence for a violation of the parallel trends
+assumption.</p>
+<p><strong>g) Create a new dataset for the years 2006 and 2008 only, and
+use it to estimate a placebo difference-in-differences effect before the
+treatment occurred. What do you conclude about the parallel trends
+assumption?</strong></p>
+<p>The placebo treatment effect is close to zero and no longer
+statistically significant (with clustering the standard error probably
+be even larger). That is, there is no evidence that changes in the
+treatment group were statistically different to changes in the control
+group in the periods before the treatment took place. This is
+reassurring: it provides more formal statistical evidence in favour of
+the parallel trends assumption.</p>
+</div>
+<div id="question-2-fixed-effects" class="section level3">
+<h3>Question 2: Fixed effects</h3>
+<p>In this question, we’ll revisit Leah Stokes’ study of Canadian wind
+farms that we introduced in Week 7, on instrumental variables. Recall
+that she examines the impact of wind farms on support for the incumbent
+party. Wind farms were built in some districts but not others between
+2007 and 2011. In her paper, she actually uses fixed effects estimation
+as well as instrumental variables. For the fixed effects part of her
+study, she has data on electoral districts for the years 2003, 2007 and
+2011.</p>
+<p><strong>a)</strong> For this study: - the treatment is
+<code>op</code> (1 if a wind farm was operational in the district-year
+observation, 0 otherwise) - the outcome is <code>perc lib</code>
+(Percentage vote for the incumbent (liberal) party) - the group variable
+for fixed effects is <code>master id</code> (ID variable indicating
+district)</p>
+<p><strong>b) Using the framework of fixed effects estimation and the
+code provided in the slides/lecture notes, estimate a suitable model for
+the causal effect of wind farms on support for the in- cumbent party.
+Explain how you chose your model. Carefully interpret the resulting
+causal effect and its statistical significance</strong></p>
+<p>There is no good reason not to include all the time-varying controls,
+here, since they make the parallel trends assumption more plausible. The
+results suggest that a wind farm becoming operational in the district
+led to an 11.7 percentage-point drop in support for the incumbent
+party</p>
+<p><strong>c) What is the key assumption needed for valid estimation of
+this causal effect? In theory (without doing any estimation), how
+reasonable do you think this assumption is?</strong></p>
+<p>The key assumption needed is parallel trends between areas that did
+and did not receive wind farms. This ensures that the untreated areas
+provide a valid counterfactual for the treated areas. It is difficult to
+say how plausible this assumption is without more formal tests, but it
+is certainly helped by the inclusion of a large number of time-varying
+confounders that probably have a strong impact on voting, like median
+income.</p>
+<p><strong>d) Using a graphical approach, assess whether or not you
+think the assumption in c) is satisfied</strong></p>
+<p>The treated and untreated districts have near-perfect parallel trends
+in the outcome variable before treatment. Note that we used the treat_o
+variable, because treatment and control groups are defined for all
+periods of the data.</p>
+</div>
 </div>
 
 
