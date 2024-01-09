@@ -12,8 +12,6 @@ output:
 We analyze Erik Meyersson’s 2014 paper, “Islamic Rule and the Empowerment of the Poor and Pious.” He asks whether political control by Islamic religious political parties leads to a decrease in women’s rights, particularly female education rates. He looks at Turkey in 1994, where an Islamic party gained political control in many municipalities, and a number of the election results were very close. He uses a regression discontinuity analysis of Islamic control on the rate of secondary school completion by girls, focusing on the Local Average Treatment Effect in areas where Islamic parties barely won or lost their elections.
 
 ```{r setup}
-knitr::opts_chunk$set(include = FALSE)
-
 library(tidyverse)
 library(rdd)
 m <- read_csv("data/islamic.csv")
