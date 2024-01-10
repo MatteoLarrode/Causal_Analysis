@@ -14,8 +14,6 @@ In a paper from 2006, Mei Guan and Donald Green investigate whether the sorts of
 
 
 ```{r setup}
-knitr::opts_chunk$set(output = FALSE)
-
 load("data/guangreen.Rda")
 ```
 

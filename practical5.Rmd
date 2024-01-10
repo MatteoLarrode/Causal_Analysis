@@ -10,7 +10,6 @@ output: html_document
 We’ll use a famous example of the effects of matching: a dataset from LaLonde’s evaluation of economic training programs in the United States. The study used observational data from a treatment group of people who took part in the National Supported Work Demonstration (NSW), a job training program in the mid 1970s. The control group is a sample of people who did not go through training, taken from the Current Population Survey (CPS). Treatment assignment was not random. The outcome of interest was income after the program had finished, in 1978: did participation in job training raise subsequent earnings?
 
 ```{r setup}
-knitr::opts_chunk$set(output = FALSE)
 library(MatchIt)
 library(Matching)
 

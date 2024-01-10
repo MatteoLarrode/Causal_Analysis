@@ -3,7 +3,6 @@ title: "Practical 7"
 author: "Matteo Larrode"
 date: "2023-11-23"
 output:
-  pdf_document: default
   html_document: default
 ---
 

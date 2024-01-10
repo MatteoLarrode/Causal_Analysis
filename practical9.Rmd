@@ -14,8 +14,6 @@ output:
 This question uses data from Malesky, Nguyen and Tran’s (2014) study of the effect of centralising control of public services in Vietnam.1 Scholars have long speculated that de-centralised control of public services in developing countries can lead to corruption and ‘capture’ by local politicians who fail to use tax revenue to invest in public services. Centralisation of control may therefore lead to increased public investment. This is difficult to test because control of government spending rarely changes hands. But in 2009, Vietnam decided to experiment with re-centralising control of its public services in some areas but not others, placing them under central government control instead of control by local district authorities in around one-fifth of districts nationwide. The authors use a difference-in-differences framework to ask what impact this had on infrastructure spending, comparing changes in treated districts (where spending was re-centralised) to untreated districts (where it remained under local control). They have data on infrastructure spending before the change (in 2006 and 2008) and after the change (in 2010), for small areas called ‘communes’, which are subsets of districts.
 
 ```{r setup}
-knitr::opts_chunk$set(include = FALSE)
-
 library(lmtest)
 library(multiwayvcov)
 load("data/malesky.Rda")
