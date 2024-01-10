@@ -4,7 +4,6 @@ author: "Matteo Larrode"
 date: "2024-01-8"
 output:
   html_document: default
-  pdf_document: default
 ---
 
 # Week 9: Causal Inference over Time: Difference-in-Differences and Fixed Effects
